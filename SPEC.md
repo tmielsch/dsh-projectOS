@@ -223,6 +223,18 @@ Entschieden:
    Mensch nicht mehrere Sitzungen von Hand anlegen muss; **mehrere CEOs je Workspace** („Firmenkonglomerat“) sollen möglich sein.
 5. **Die Texte müssen gut ins Englische übersetzbar sein;** griffige englische Wörter sind erwünscht (offen, D11).
 
+### A10 — Kein Firmenwort, Bau beginnt, 2026-10-28
+
+> „Schon mal gut mit dem Begriffen, ich will nur Company nicht drin haben, weil eine Company ist halt ein privatwirtschaftliches
+> Thing und das hier soll ja allgemein abstrakt sein. Und ja, du kannst loslegen."
+
+Entschieden:
+1. **Kein Firmenwort in der Oberfläche:** weder „Company“ noch „Firma“. Die oberste Ebene heißt **Workspace** (so nennt DSH sie selbst;
+   Vorschlag des Agenten, vom Menschen nicht ausdrücklich bestätigt, aber nicht beanstandet; Alternative „Organisation / Organization“).
+   „CEO“ ist ebenfalls ein Firmenbegriff; Wortwahl dafür ist **offen** (D13) und wird erst für das zweite Stück gebraucht.
+2. Die übrigen Wörter der Tabelle C7 gelten als gebilligt (Department, Work Group, Group Lead, Specialist, Helper bzw. Abteilung, Arbeitsgruppe, …).
+3. **Der Bau beginnt** mit dem ersten Schnitt aus A6 Punkt 4.
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -381,7 +393,7 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 ### C7 — Begriffe deutsch und englisch (Vorschlag des Agenten, noch keine Entscheidung)
 | Ebene | Deutsch | Englisch, beschreibend (empfohlen) | Englisch, griffig (Alternative) |
 |---|---|---|---|
-| Workspace | Firma | Company | — |
+| Workspace | Workspace (**nicht** „Firma“, siehe A10) | Workspace (**nicht** „Company“, siehe A10) | Organization |
 | oberste Sitzung (Wunsch) | CEO | CEO | — |
 | Teamsitzung | Abteilung | Department | — |
 | Leiter der Abteilung | Abteilungsleiter | Department Lead | Commander |
@@ -413,7 +425,8 @@ Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erk
    sich beim Kern anmeldet. Die Form der Anmeldung folgt dem Muster, das DSH selbst benutzt (Slots, `ctx.slots.inject`).
 10. ~~Was ist „Automation-Tasks“?~~ **geklärt, siehe A8 Punkt 1.** Gemessen war: Gemessen im Profil: `dsh-schedule` (Host-weite Erinnerungen, Zeitplan) samt `dsh-client-ui-schedule`
     (Aufgaben-Seite) im Bundle `dsh-experimental-schedule-bundle`. Von Chrome-Jobs kommt dort nichts vor.
-11. **Englische Wörter:** Tabelle in C7 bestätigen oder ändern.
+11. ~~Englische Wörter~~ **gebilligt am 2026-10-28 mit Ausnahme von „Company“, siehe A10.**
 12. **Kommunikation zwischen Abteilungen und CEO:** Messung steht in B6. Zusammengefasst: innerhalb einer Abteilung geht alles schon (`send_message`);
     zwischen Abteilungsleitern und für einen CEO braucht es eine neue, kleine Host-Schicht nach dem Muster von `dsh-schedule`, ohne Umbau des Kerns. Erste Fassung
     bleibt nach A6 eine **lesende** Ansicht; die Schicht kommt danach, als zweites Stück. Offen: ob ein Browser-Plugin ohne eigenen Host-Teil auskommt.
+13. **Wort für „CEO“:** firmenneutral gewünscht (A10). Vorschlag zur Diskussion: *Root Lead* / *Oberste Leitung*, oder bei „Director“ bleiben. Wird für das zweite Stück gebraucht.
