@@ -54,7 +54,33 @@ und ist Teil seiner Sitzung. Der Projekt-Manager zeigt sie **noch nicht** an: di
 Browser liest, trägt für Mitglieder nur Name, Rolle und Zustand. Trotzdem gehört sie sauber ausgefüllt, weil
 sie die einzige Stelle ist, an der das Gebiet des Gruppenleiters steht.
 
-### 5. Was der Projekt-Manager nicht ändert
+### 6. Es wird mit gemeinsamen Aufgaben gearbeitet
+
+Der Projekt-Manager zeigt, was in den **gemeinsamen Aufgaben des Agent-Teams** steht (Werkzeuge `team_task_create`,
+`team_task_list`, `team_task_get`, `team_task_update`). Ohne sie bleibt das Brett leer: Es zeigt „0 offene Aufgaben“
+und „keine Aufgabe übernommen“ (Beleg 2026-10-28), obwohl 17 Gruppenleiter arbeiten. Deshalb gilt:
+
+1. **Der Abteilungsleiter legt die Aufgabe an, bevor er den Gruppenleiter einstellt.** Erst `team_task_create`
+   (Titel = Name nach Punkt 1, Beschreibung mit Abnahme, bei Bedarf `blocked_by` und `write_scopes`), dann
+   `spawn_teammate`. Der Auftrag an den Gruppenleiter nennt die Aufgaben-ID.
+2. **Der Gruppenleiter übernimmt sie als Erstes** (`team_task_update` mit `action: "claim"` und der aktuellen
+   `expected_revision`), und er **schließt** sie (`action: "complete"`), wenn die Abnahme erfüllt ist. Er legt für
+   größere Teilschritte eigene Aufgaben an, statt sie nur im Verlauf zu erwähnen.
+3. **Abhängigkeiten stehen in `blocked_by`**, nicht in Prosa. Wer auf eine andere Aufgabe wartet, sagt es dort.
+4. **Facharbeiter (`delegate_task`) haben keine eigenen Aufgaben.** Sie arbeiten im Auftrag ihres Gruppenleiters; die
+   Aufgabe, zu der ihr Auftrag gehört, steht im Auftragstext (`Aufgabe: <ID>`), und der Gruppenleiter bucht das
+   Ergebnis dort.
+5. **Wer etwas Zusätzliches anlegt, sagt es.** Ändert eine Aufgabe ihren Umfang, geschieht das mit `action: "edit"`.
+
+**Der Mensch darf das überschreiben.** Sagt er ausdrücklich, dass für eine Arbeit keine Aufgaben nötig sind oder dass
+sie anders geführt werden sollen, gilt sein Wort. Hat er etwas vor, das dazu nicht passt, nennt der Agent ihm in
+**einem Satz**, wie es vorgesehen ist („Normalerweise lege ich zuerst eine Aufgabe an, damit sie im Projekt-Manager
+erscheint; soll ich das hier weglassen?“) und folgt dann seiner Antwort. **Fragt der Mensch, wie alles zusammenspielt,**
+erklärt der Agent es vollständig und in ganzen Sätzen: Abteilung = Teamsitzung mit Abteilungsleiter; Arbeitsgruppe =
+Gruppenleiter mit seinen Facharbeitern; gemeinsame Aufgaben = Stand der Arbeit, den der Projekt-Manager anzeigt;
+Facharbeiter = Unteragenten, die im Auftrag des Gruppenleiters arbeiten.
+
+### 7. Was der Projekt-Manager nicht ändert
 
 Rollen (`rolle` bei `delegate_task`), Specs, Ziele und Abnahmen laufen wie zuvor. Dieser Abschnitt regelt nur
-Namen, Titelzeile und die Einordnung in Spalten.
+Namen, Titelzeile, die Einordnung in Spalten und den Umgang mit gemeinsamen Aufgaben.
