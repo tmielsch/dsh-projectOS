@@ -37,4 +37,6 @@ ${body}
 `
 mkdirSync(join(root, 'lib'), { recursive: true })
 writeFileSync(join(root, 'lib/client.js'), bundle)
+// Host half: copied as is (the first cut has an empty host body).
+writeFileSync(join(root, 'lib/index.js'), readFileSync(join(root, 'src/host/index.js'), 'utf8'))
 console.log('lib/client.js written,', bundle.length, 'bytes')

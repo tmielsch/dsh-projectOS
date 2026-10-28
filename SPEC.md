@@ -235,6 +235,28 @@ Entschieden:
 2. Die übrigen Wörter der Tabelle C7 gelten als gebilligt (Department, Work Group, Group Lead, Specialist, Helper bzw. Abteilung, Arbeitsgruppe, …).
 3. **Der Bau beginnt** mit dem ersten Schnitt aus A6 Punkt 4.
 
+### A11 — Das Brett zeigt nur eine Ebene, Karten klappen auf, Namen statt Satzanfänge, 2026-10-28
+
+Nach dem ersten Blick auf die Seite (Bild: 87 Karten in einem Brett, Titel wie „<system-reminder> You are …“):
+
+> „Ja, kannst du gerne abschalten das Taskboard. Also ein Problem, was wir mit dem Kanban so ein bisschen haben, ist erstmal, dass es wäre schön, wenn man Karten aufklappen könnte, dass man dann quasi so eingerückt Unterkarten der Subagents sieht, aber nicht alle Subagents auf einem Level auf einmal sichtbar sind."
+
+> „Es müsste halt irgendwie ein Filter geben, der sagt, okay, das hier ist ein offizielles Subagent-Team-Member-Ding innerhalb dieses Systems. Und dann kriegt das quasi ein Header, eine Überschrift, einen Titel, eine Aufgabe und so weiter, und das ist einfach irgendwie, kriegt Metadaten, die das Ganze leicht identifizierbar machen […] Weil im Moment ist es nur so der Titel, der Titel der Session quasi."
+
+> „[…] dass Sub-Agents und Teammates alle werden ohne Unterschied einfach nur in das Top-Level-Board geworfen und das ist nicht gut. Weil das klattert und ne, woher weiß ich, was sind jetzt die, die überhaupt relevant sind für mich, weißt du? Nachher hast du 300 Teammates und dann hast du ein Board voll mit 300 Karten, das ist unbenutzbar. Deswegen gibt es ja die hierarchischen Level des Boardes quasi, dass ich nur das hierarchische Level zurzeit betrachte, in das ich nicht reingeklickt habe. Nur das Team, nur den Ausschnitt des Teams quasi, den ich gerade beobachten will. Und wenn ich jetzt wissen will, okay, da ist ein Sub-Agent, der ist gerade oder ein Teammate, der arbeitet gerade und ich will wissen, was dessen Sub-Agents machen, so, dann klicke ich halt einfach auf dessen Karte, klappt die aus und sehe dann da ausgeklappt die Sub-Agents. Und wenn ich dann auf eine ausgeklappte Sub-Agent-Karte klicke, so, dann gehe ich in deren Taskboard rein und so weiter. Das muss halt diese hierarchischen Level und dieses Nesting muss halt funktionieren."
+
+> „Und dieses Waiting for an Order ist auch, also Sub-Agents sollten darauf komplett, ne, […]" (Lesart des Agenten: Facharbeiter sollen nie in der Spalte „Wartet auf Auftrag“ stehen.)
+
+> „Auch hier dieses, dass alles irgendwie nur der erste Satz ist, weißt du, es muss halt benannt werden. Und vielleicht kann man aufhören damit, Sub-Agents mit dieser einfach nur direkt den Init-Block rein zu pasten, sondern erstmal als erstes einfach einen Namen zu geben, weißt du, weil dann werden die ja automatisch benannt. Aber das muss halt, weiß ich nicht, mit diesem Project Manager muss quasi, müssen Agents-MD-Anweisungen kommen, die alle anderen überschreiben und so machen, dass sie damit harmonisieren."
+
+Entschieden:
+1. **Das Task-Board wird abgeschaltet** (geschehen am 2026-10-28 im Profil: `web-ui-task-board` und `web-ui-task-board-github` auf `disabled: true`).
+2. **Das Brett zeigt immer nur eine Ebene:** die direkten Kinder der Karte, in die man hineingegangen ist. Oberste Ebene: die Gruppenleiter der Abteilung plus **eine** zusammengefasste Karte für alles, was der Abteilungsleiter sonst gestartet hat (Hilfsarbeiter). Hilfsarbeiter und Facharbeiter stehen nicht einzeln auf der obersten Ebene.
+3. **Eine Karte klappt auf** und zeigt eingerückt ihre direkten Kinder (nicht alle Ebenen auf einmal). **Ein Klick auf ein aufgeklapptes Kind geht in dessen Brett hinein**, und so weiter beliebig tief.
+4. **Facharbeiter und Hilfsarbeiter stehen nie in „Wartet auf Auftrag“.** Sie arbeiten oder sind fertig. Auf einen Auftrag warten nur Gruppenleiter.
+5. **Karten tragen einen Namen, nicht den Anfang des ersten Auftrags.** Quelle des Namens: bei Gruppenleitern der Name im Team; bei allen anderen das Label, das der Aufrufer bei `delegate_task` (Feld `description`, „kurze Beschreibung in 3–5 Wörtern“) mitgibt und das in der Katalog-Projektion des Elternteils steht (`subagentCatalog[].label`); erst danach der bereinigte Sitzungstitel, zuletzt die Kurz-ID.
+6. **Anweisungen an die Agenten (AGENTS.md) gehören zum Projekt-Manager** und sollen die bestehenden überschreiben, soweit sie Namen und Aufträge betreffen. Inhalt und Ablage sind **offen** (D14).
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -446,3 +468,4 @@ Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erk
     zwischen Abteilungsleitern und für einen CEO braucht es eine neue, kleine Host-Schicht nach dem Muster von `dsh-schedule`, ohne Umbau des Kerns. Erste Fassung
     bleibt nach A6 eine **lesende** Ansicht; die Schicht kommt danach, als zweites Stück. Offen: ob ein Browser-Plugin ohne eigenen Host-Teil auskommt.
 13. **Wort für „CEO“:** firmenneutral gewünscht (A10). Vorschlag zur Diskussion: *Root Lead* / *Oberste Leitung*, oder bei „Director“ bleiben. Wird für das zweite Stück gebraucht.
+14. **Anweisungen für die Namensvergabe (A11 Punkt 6):** Welche Sätze genau in welche AGENTS.md, und ob sie das Plugin mitliefert oder nur vorschlägt. Gemessen ist: `delegate_task` verlangt bereits das Feld `description` (kurze Beschreibung, 3–5 Wörter) und `spawn_teammate` das Feld `description`; beide landen als Label im Katalog. Die Sitzungstitel, die der Mensch sieht, stammen dagegen aus dem ersten Auftragstext (`dsh-session-title`).

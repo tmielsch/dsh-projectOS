@@ -1,12 +1,17 @@
 /**
  * Pure data model of the manager page. No React, no DSH imports: it reads the
  * session list snapshot the browser already holds (SPEC B7) and returns
- * departments, work groups and worker cards.
+ * departments and, for one level of the hierarchy at a time, worker cards.
  *
  * Source of the data (SPEC B7, measured):
- *  - `byId[id]`            id, displayTitle, cwd?, parentId?, origin?, running, updatedAt, projectionValues?
- *  - `projectionsBySession[leadId].values.agentTeam`     { members, tasks, failure? }
- *  - `projectionsBySession[expertId].values.subagentCatalog`  [{ id, mode, label? }]
+ *  - `byId[id]`                                id, displayTitle, cwd?, parentId?, origin?, running, updatedAt, projectionValues?
+ *  - `projectionsBySession[leadId].values.agentTeam`          { members, tasks, failure? }
+ *  - `projectionsBySession[parentId].values.subagentCatalog`  [{ id, mode, label?, createdAt }]
+ *
+ * Levels (Owner, 2026-10-28, SPEC A11): the board shows only the direct children of
+ * ONE node. Department lead -> group leads (team members) plus ONE collapsed card for
+ * everything else the lead started. A card can be unfolded to peek at its children,
+ * and a child card can be entered to see its own board.
  */
 
 export interface SessionRow {
@@ -50,30 +55,31 @@ export interface TeamTask {
 
 /** The lane (column) a worker card sits in. */
 export type Lane = 'working' | 'waiting' | 'resting' | 'starting' | 'failed' | 'done'
-
-/** The order the lanes are drawn in. */
 export const LANES: readonly Lane[] = ['working', 'waiting', 'starting', 'resting', 'failed', 'done']
 
 /**
- * What a card is:
- *  - `group-lead`   a team member of the department (the leader of a work group)
- *  - `specialist`   a child of a group lead started with delegate_task
- *  - `helper`       a child of the department lead that is not a team member
+ *  - `group-lead`    a team member of the department (leader of a work group)
+ *  - `specialist`    a child started with delegate_task below a group lead or another specialist
+ *  - `helper`        a child of the department lead that is not a team member (or a retired one)
+ *  - `helpers`       the single collapsed card that stands for all helpers of the department lead
  */
-export type WorkerKind = 'group-lead' | 'specialist' | 'helper'
+export type WorkerKind = 'group-lead' | 'specialist' | 'helper' | 'helpers'
 
 export interface WorkerCard {
+  /** Session id, or `helpers:<leadId>` for the collapsed helpers card. */
   id: string
   name: string
   kind: WorkerKind
   lane: Lane
-  /** Name of the work group this worker belongs to (the group lead's name). */
-  group: string
   model?: string
-  description?: string
   error?: string
-  /** `one-shot` specialists end with their order; everything else keeps waiting. */
   mode?: 'one-shot' | 'continuable' | 'unknown'
+  createdAt?: number
+  /** Number of direct children, and how many of them are working right now. */
+  children: number
+  childrenWorking: number
+  /** Sort key: newest first inside a lane. */
+  recency: number
 }
 
 export interface Department {
@@ -82,7 +88,7 @@ export interface Department {
   cwd: string
   leadRunning: boolean
   tasks: TeamTask[]
-  workers: WorkerCard[]
+  members: TeamMember[]
   failure?: string
 }
 
@@ -92,163 +98,118 @@ export interface WorkspaceGroup {
   departments: Department[]
 }
 
+export const HELPERS_PREFIX = 'helpers:'
+export const isHelpersId = (id: string): boolean => id.startsWith(HELPERS_PREFIX)
+
 /** Last path segment of a directory, tolerant of both separators. */
 export function baseName(path: string): string {
   const parts = path.split(/[\\/]+/).filter((part) => part !== '')
   return parts.length === 0 ? path : parts[parts.length - 1]!
 }
 
-function modelOf(row: SessionRow | undefined, projection: { values: Record<string, any> } | undefined): string | undefined {
-  const fromProjection = projection?.values?.modelSelection?.next?.model
+/**
+ * A readable name from a session title. Titles are the first line of the first
+ * prompt, so they start with markup or a system tag; strip the markup, and fall
+ * back to the short id when only a tag or nothing is left.
+ */
+export function readableTitle(title: string | undefined, id: string): string {
+  const short = id.replace(/^session-/, '').slice(0, 8)
+  if (title === undefined) return short
+  let text = title.trim()
+  if (text.startsWith('<')) return short
+  text = text.replace(/^[`>#*\-\s]+/, '').replace(/[`*]+/g, '').trim()
+  return text === '' ? short : text
+}
+
+interface CatalogInfo { parentId: string; label?: string; mode?: WorkerCard['mode']; createdAt?: number }
+
+/** child id -> what its parent's catalog says about it. */
+export function catalogIndex(list: ListState): Map<string, CatalogInfo> {
+  const index = new Map<string, CatalogInfo>()
+  const projections = list.projectionsBySession ?? {}
+  for (const parentId of Object.keys(projections)) {
+    const entries = projections[parentId]?.values?.subagentCatalog
+    if (!Array.isArray(entries)) continue
+    for (const entry of entries) {
+      const info: CatalogInfo = { parentId }
+      if (typeof entry.label === 'string' && entry.label.trim() !== '') info.label = entry.label.trim()
+      if (entry.mode === 'one-shot' || entry.mode === 'continuable' || entry.mode === 'unknown') info.mode = entry.mode
+      if (typeof entry.createdAt === 'number') info.createdAt = entry.createdAt
+      index.set(entry.id, info)
+    }
+  }
+  return index
+}
+
+/** Direct child ids of one session: catalog entries plus rows that name it as parent. */
+export function childIdsOf(list: ListState, parentId: string, index = catalogIndex(list)): string[] {
+  const out = new Set<string>()
+  for (const [childId, info] of index) if (info.parentId === parentId) out.add(childId)
+  for (const id of Object.keys(list.byId)) if (list.byId[id]?.parentId === parentId) out.add(id)
+  return [...out]
+}
+
+function modelOf(list: ListState, id: string): string | undefined {
+  const fromProjection = list.projectionsBySession?.[id]?.values?.modelSelection?.next?.model
   if (typeof fromProjection === 'string') return fromProjection
-  const fromRow = row?.projectionValues?.modelSelection?.next?.model
+  const fromRow = list.byId[id]?.projectionValues?.modelSelection?.next?.model
   return typeof fromRow === 'string' ? fromRow : undefined
 }
 
-/** Decide the lane of one worker from facts the browser already has. */
-export function laneOf(input: {
-  phase?: TeamMember['phase']
-  error?: string
-  running: boolean
-  mode?: WorkerCard['mode']
-}): Lane {
+/** Lane of a group lead (a team member). */
+export function laneOf(input: { phase?: TeamMember['phase']; error?: string; running: boolean }): Lane {
   if (input.error !== undefined || input.phase === 'failed') return 'failed'
   if (input.phase === 'provisioning') return 'starting'
   if (input.phase === 'resting') return 'resting'
-  if (input.running) return 'working'
-  if (input.mode === 'one-shot') return 'done'
-  return 'waiting'
+  return input.running ? 'working' : 'waiting'
 }
 
-function childrenOf(list: ListState, parentId: string): SessionRow[] {
-  const out: SessionRow[] = []
-  for (const id of list.ids) {
-    const row = list.byId[id]
-    if (row !== undefined && row.parentId === parentId) out.push(row)
+/** Every started subagent is either working or finished; only group leads wait for orders. */
+export function subagentLane(running: boolean): Lane {
+  return running ? 'working' : 'done'
+}
+
+/** Count all descendants that are working, with a depth guard against cycles. */
+function workingBelow(list: ListState, id: string, index: Map<string, CatalogInfo>, depth = 0, seen = new Set<string>()): number {
+  if (depth > 6 || seen.has(id)) return 0
+  seen.add(id)
+  let count = 0
+  for (const childId of childIdsOf(list, id, index)) {
+    if (list.byId[childId]?.running === true) count += 1
+    count += workingBelow(list, childId, index, depth + 1, seen)
   }
-  // The browser also adds subagents that are only known through the parent's catalog.
-  for (const id of Object.keys(list.byId)) {
-    if (list.ids.includes(id)) continue
-    const row = list.byId[id]
-    if (row !== undefined && row.parentId === parentId) out.push(row)
-  }
-  return out
+  return count
 }
 
-function catalogOf(list: ListState, sessionId: string): Array<{ id: string; mode: WorkerCard['mode']; label?: string }> {
-  const entries = list.projectionsBySession?.[sessionId]?.values?.subagentCatalog
-  return Array.isArray(entries) ? entries : []
-}
-
-/** Build one department from a lead session that carries an agentTeam projection. */
-export function buildDepartment(list: ListState, leadId: string): Department | undefined {
+function departmentOf(list: ListState, leadId: string): Department | undefined {
   const team = list.projectionsBySession?.[leadId]?.values?.agentTeam as
     | { members: TeamMember[]; tasks: TeamTask[]; failure?: string }
     | undefined
   const leadRow = list.byId[leadId]
   if (team === undefined || leadRow === undefined) return undefined
-
-  const workers: WorkerCard[] = []
-  const memberIds = new Set<string>()
-
-  for (const member of team.members) {
-    if (member.role === 'lead' || member.phase === 'retired') continue
-    memberIds.add(member.id)
-    const row = list.byId[member.id]
-    const projection = list.projectionsBySession?.[member.id]
-    const card: WorkerCard = {
-      id: member.id,
-      name: member.name,
-      kind: 'group-lead',
-      lane: laneOf({
-        phase: member.phase,
-        ...(member.error !== undefined ? { error: member.error } : {}),
-        running: row?.running === true,
-      }),
-      group: member.name,
-    }
-    const model = modelOf(row, projection)
-    if (model !== undefined) card.model = model
-    if (member.error !== undefined) card.error = member.error
-    workers.push(card)
-  }
-
-  // Specialists: direct children of every group lead that are not team members.
-  for (const member of team.members) {
-    if (member.role === 'lead' || member.phase === 'retired') continue
-    const catalog = catalogOf(list, member.id)
-    const seen = new Set<string>()
-    const rows = [
-      ...catalog.map((entry) => ({ id: entry.id, mode: entry.mode, label: entry.label })),
-      ...childrenOf(list, member.id).map((row) => ({ id: row.id, mode: undefined as WorkerCard['mode'], label: undefined as string | undefined })),
-    ]
-    for (const entry of rows) {
-      if (seen.has(entry.id) || memberIds.has(entry.id)) continue
-      seen.add(entry.id)
-      const row = list.byId[entry.id]
-      const mode = entry.mode ?? catalog.find((c) => c.id === entry.id)?.mode
-      const card: WorkerCard = {
-        id: entry.id,
-        name: row?.displayTitle ?? entry.label ?? entry.id,
-        kind: 'specialist',
-        lane: laneOf({ running: row?.running === true, ...(mode !== undefined ? { mode } : {}) }),
-        group: member.name,
-      }
-      if (mode !== undefined) card.mode = mode
-      const model = modelOf(row, list.projectionsBySession?.[entry.id])
-      if (model !== undefined) card.model = model
-      workers.push(card)
-    }
-  }
-
-  // Helpers of the department lead itself (children that are not team members).
-  const seenHelpers = new Set<string>()
-  for (const entry of [
-    ...catalogOf(list, leadId).map((e) => ({ id: e.id, mode: e.mode, label: e.label })),
-    ...childrenOf(list, leadId).map((row) => ({ id: row.id, mode: undefined as WorkerCard['mode'], label: undefined as string | undefined })),
-  ]) {
-    if (seenHelpers.has(entry.id) || memberIds.has(entry.id)) continue
-    seenHelpers.add(entry.id)
-    const row = list.byId[entry.id]
-    const mode = entry.mode
-    const card: WorkerCard = {
-      id: entry.id,
-      name: row?.displayTitle ?? entry.label ?? entry.id,
-      kind: 'helper',
-      lane: laneOf({ running: row?.running === true, ...(mode !== undefined ? { mode } : {}) }),
-      group: '',
-    }
-    if (mode !== undefined) card.mode = mode
-    workers.push(card)
-  }
-
   const department: Department = {
     leadId,
-    title: leadRow.displayTitle,
+    title: readableTitle(leadRow.displayTitle, leadId),
     cwd: leadRow.cwd ?? '',
     leadRunning: leadRow.running,
     tasks: team.tasks,
-    workers,
+    members: team.members.filter((m) => m.role === 'teammate' && m.phase !== 'retired'),
   }
   if (team.failure !== undefined) department.failure = team.failure
   return department
 }
 
-/**
- * Every session that carries a team with at least one teammate is a department.
- * A session with only the lead itself is no department yet.
- */
+/** Every session that carries a team with at least one teammate is a department. */
 export function buildWorkspaces(list: ListState): WorkspaceGroup[] {
   const byCwd = new Map<string, Department[]>()
   const projections = list.projectionsBySession ?? {}
   for (const leadId of Object.keys(projections)) {
     const team = projections[leadId]?.values?.agentTeam as { members?: TeamMember[] } | undefined
-    if (team?.members === undefined || team.members.filter((m) => m.role === 'teammate').length === 0) continue
-    const department = buildDepartment(list, leadId)
+    if (team?.members === undefined || team.members.filter((m) => m.role === 'teammate' && m.phase !== 'retired').length === 0) continue
+    const department = departmentOf(list, leadId)
     if (department === undefined) continue
-    const key = department.cwd
-    const bucket = byCwd.get(key)
-    if (bucket === undefined) byCwd.set(key, [department])
+    const bucket = byCwd.get(department.cwd)
+    if (bucket === undefined) byCwd.set(department.cwd, [department])
     else bucket.push(department)
   }
   const groups: WorkspaceGroup[] = []
@@ -260,31 +221,110 @@ export function buildWorkspaces(list: ListState): WorkspaceGroup[] {
   return groups
 }
 
+/** Name shown for any id on the path (breadcrumb) or on a card. */
+export function nameOf(list: ListState, department: Department, id: string, index = catalogIndex(list)): string {
+  if (id === department.leadId) return department.title
+  if (isHelpersId(id)) return ''
+  const member = department.members.find((m) => m.id === id)
+  if (member !== undefined) return member.name
+  const info = index.get(id)
+  if (info?.label !== undefined) return info.label
+  return readableTitle(list.byId[id]?.displayTitle, id)
+}
+
+function cardOf(list: ListState, department: Department, id: string, kind: WorkerKind, index: Map<string, CatalogInfo>, member?: TeamMember): WorkerCard {
+  const row = list.byId[id]
+  const info = index.get(id)
+  const running = row?.running === true
+  const kids = childIdsOf(list, id, index)
+  const card: WorkerCard = {
+    id,
+    name: nameOf(list, department, id, index),
+    kind,
+    lane: member !== undefined
+      ? laneOf({ phase: member.phase, ...(member.error !== undefined ? { error: member.error } : {}), running })
+      : subagentLane(running),
+    children: kids.length,
+    childrenWorking: kids.filter((k) => list.byId[k]?.running === true).length,
+    recency: info?.createdAt ?? row?.updatedAt ?? 0,
+  }
+  const model = modelOf(list, id)
+  if (model !== undefined) card.model = model
+  if (member?.error !== undefined) card.error = member.error
+  if (info?.mode !== undefined) card.mode = info.mode
+  if (info?.createdAt !== undefined) card.createdAt = info.createdAt
+  return card
+}
+
+/** Ids of the lead's children that are neither active team members nor the lead itself. */
+export function helperIds(list: ListState, department: Department, index = catalogIndex(list)): string[] {
+  const memberIds = new Set(department.members.map((m) => m.id))
+  return childIdsOf(list, department.leadId, index).filter((id) => !memberIds.has(id))
+}
+
+/**
+ * The cards of ONE level: the direct children of `focusId`.
+ *  - the department lead: its group leads, plus one collapsed card for all helpers
+ *  - the helpers card: the helpers themselves
+ *  - anything else: its direct subagents
+ */
+export function levelCards(list: ListState, department: Department, focusId: string): WorkerCard[] {
+  const index = catalogIndex(list)
+  const cards: WorkerCard[] = []
+  if (focusId === department.leadId) {
+    for (const member of department.members) cards.push(cardOf(list, department, member.id, 'group-lead', index, member))
+    const helpers = helperIds(list, department, index)
+    if (helpers.length > 0) {
+      const working = helpers.filter((id) => list.byId[id]?.running === true).length
+      cards.push({
+        id: HELPERS_PREFIX + department.leadId,
+        name: '',
+        kind: 'helpers',
+        lane: subagentLane(working > 0),
+        children: helpers.length,
+        childrenWorking: working,
+        recency: Math.max(0, ...helpers.map((id) => index.get(id)?.createdAt ?? list.byId[id]?.updatedAt ?? 0)),
+      })
+    }
+  } else if (isHelpersId(focusId)) {
+    for (const id of helperIds(list, department, index)) cards.push(cardOf(list, department, id, 'helper', index))
+  } else {
+    for (const id of childIdsOf(list, focusId, index)) cards.push(cardOf(list, department, id, 'specialist', index))
+  }
+  return cards
+}
+
+/** The direct children of one card, for the unfolded preview. */
+export function childCards(list: ListState, department: Department, card: WorkerCard): WorkerCard[] {
+  return levelCards(list, department, card.id)
+}
+
+/** Cards of one lane: working ones by name, the rest newest first. */
+export function inLane(cards: WorkerCard[], lane: Lane): WorkerCard[] {
+  return cards
+    .filter((card) => card.lane === lane)
+    .sort((a, b) => (lane === 'working' ? a.name.localeCompare(b.name) : b.recency - a.recency || a.name.localeCompare(b.name)))
+}
+
 /** Tasks a worker has claimed. The team plugin stores the owner by name. */
-export function claimedTasks(department: Department, worker: WorkerCard): TeamTask[] {
-  if (worker.kind !== 'group-lead') return []
-  return department.tasks.filter((task) => task.ownerName === worker.name)
+export function claimedTasks(department: Department, card: WorkerCard): TeamTask[] {
+  if (card.kind !== 'group-lead') return []
+  return department.tasks.filter((task) => task.ownerName === card.name)
 }
 
-/** Workers of one lane, group leads first, then specialists of the same group together. */
-export function workersInLane(department: Department, lane: Lane): WorkerCard[] {
-  const rank: Record<WorkerKind, number> = { 'group-lead': 0, specialist: 1, helper: 2 }
-  return department.workers
-    .filter((worker) => worker.lane === lane)
-    .sort((a, b) => a.group.localeCompare(b.group) || rank[a.kind] - rank[b.kind] || a.name.localeCompare(b.name))
-}
-
-/** How many workers and tasks a department has, for its header. */
-export function summary(department: Department): {
-  workers: number
+/** Numbers for the header of one department. */
+export function summary(list: ListState, department: Department): {
+  groups: number
   working: number
   tasksOpen: number
   tasksRunning: number
   tasksDone: number
 } {
+  const index = catalogIndex(list)
+  const working = workingBelow(list, department.leadId, index)
   return {
-    workers: department.workers.length,
-    working: department.workers.filter((w) => w.lane === 'working').length,
+    groups: department.members.length,
+    working,
     tasksOpen: department.tasks.filter((t) => t.status === 'pending').length,
     tasksRunning: department.tasks.filter((t) => t.status === 'in_progress').length,
     tasksDone: department.tasks.filter((t) => t.status === 'completed').length,

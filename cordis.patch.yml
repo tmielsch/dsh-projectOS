@@ -1,0 +1,5 @@
+# dsh-projectOS bundle patch: adds the plugin row to the bundle stack.
+# Installed through the profile, this single `insert` is all that is needed.
+- insert:
+    - id: project-os
+      name: '@tmielsch/dsh-projectos'
