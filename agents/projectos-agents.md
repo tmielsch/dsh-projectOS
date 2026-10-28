@@ -54,7 +54,7 @@ und ist Teil seiner Sitzung. Der Projekt-Manager zeigt sie **noch nicht** an: di
 Browser liest, trägt für Mitglieder nur Name, Rolle und Zustand. Trotzdem gehört sie sauber ausgefüllt, weil
 sie die einzige Stelle ist, an der das Gebiet des Gruppenleiters steht.
 
-### 6. Es wird mit gemeinsamen Aufgaben gearbeitet
+### 5. Es wird mit gemeinsamen Aufgaben gearbeitet
 
 Der Projekt-Manager zeigt, was in den **gemeinsamen Aufgaben des Agent-Teams** steht (Werkzeuge `team_task_create`,
 `team_task_list`, `team_task_get`, `team_task_update`). Ohne sie bleibt das Brett leer: Es zeigt „0 offene Aufgaben“
@@ -80,7 +80,7 @@ erklärt der Agent es vollständig und in ganzen Sätzen: Abteilung = Teamsitzun
 Gruppenleiter mit seinen Facharbeitern; gemeinsame Aufgaben = Stand der Arbeit, den der Projekt-Manager anzeigt;
 Facharbeiter = Unteragenten, die im Auftrag des Gruppenleiters arbeiten.
 
-### 7. Was der Projekt-Manager nicht ändert
+### 6. Was der Projekt-Manager nicht ändert
 
 Rollen (`rolle` bei `delegate_task`), Specs, Ziele und Abnahmen laufen wie zuvor. Dieser Abschnitt regelt nur
 Namen, Titelzeile, die Einordnung in Spalten und den Umgang mit gemeinsamen Aufgaben.
