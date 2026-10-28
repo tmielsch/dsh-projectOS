@@ -66,11 +66,17 @@ und „keine Aufgabe übernommen“ (Beleg 2026-10-28), obwohl 17 Gruppenleiter 
 2. **Der Gruppenleiter übernimmt sie als Erstes** (`team_task_update` mit `action: "claim"` und der aktuellen
    `expected_revision`), und er **schließt** sie (`action: "complete"`), wenn die Abnahme erfüllt ist. Er legt für
    größere Teilschritte eigene Aufgaben an, statt sie nur im Verlauf zu erwähnen.
-3. **Abhängigkeiten stehen in `blocked_by`**, nicht in Prosa. Wer auf eine andere Aufgabe wartet, sagt es dort.
-4. **Facharbeiter (`delegate_task`) haben keine eigenen Aufgaben.** Sie arbeiten im Auftrag ihres Gruppenleiters; die
+3. **Der Live-Stand: eine Zeile, die sagt, woran du gerade arbeitest.** Nach dem Übernehmen liest der Gruppenleiter die
+   Aufgabe einmal ganz und schreibt dann **eine** Zeile an den Anfang ihrer Beschreibung: `Stand: <was ich gerade genau
+   tue, ein Satz>` (`team_task_update` mit `action: "edit"`, die übrige Beschreibung bleibt unverändert). Ändert sich die
+   Tätigkeit, ersetzt er **diese eine Zeile**, er hängt keine weiteren an. Der Projekt-Manager zeigt sie auf der Karte; der
+   Mensch sieht so ohne Nachfrage, was gerade geschieht. Beim Abschließen entfernt er die Zeile oder ersetzt sie durch das
+   Ergebnis in einem Satz.
+4. **Abhängigkeiten stehen in `blocked_by`**, nicht in Prosa. Wer auf eine andere Aufgabe wartet, sagt es dort.
+5. **Facharbeiter (`delegate_task`) haben keine eigenen Aufgaben.** Sie arbeiten im Auftrag ihres Gruppenleiters; die
    Aufgabe, zu der ihr Auftrag gehört, steht im Auftragstext (`Aufgabe: <ID>`), und der Gruppenleiter bucht das
    Ergebnis dort.
-5. **Wer etwas Zusätzliches anlegt, sagt es.** Ändert eine Aufgabe ihren Umfang, geschieht das mit `action: "edit"`.
+6. **Wer etwas Zusätzliches anlegt, sagt es.** Ändert eine Aufgabe ihren Umfang, geschieht das mit `action: "edit"`.
 
 **Der Mensch darf das überschreiben.** Sagt er ausdrücklich, dass für eine Arbeit keine Aufgaben nötig sind oder dass
 sie anders geführt werden sollen, gilt sein Wort. Hat er etwas vor, das dazu nicht passt, nennt der Agent ihm in

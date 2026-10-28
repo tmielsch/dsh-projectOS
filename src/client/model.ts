@@ -75,6 +75,10 @@ export interface WorkerCard {
   error?: string
   mode?: 'one-shot' | 'continuable' | 'unknown'
   createdAt?: number
+  /** Last activity of the session (ms), from the session list row. */
+  updatedAt?: number
+  /** Live note: the `Stand:` line of the task this group lead has in progress (SPEC A13 point 2). */
+  note?: string
   /** Number of direct children, and how many of them are working right now. */
   children: number
   childrenWorking: number
@@ -253,7 +257,34 @@ function cardOf(list: ListState, department: Department, id: string, kind: Worke
   if (member?.error !== undefined) card.error = member.error
   if (info?.mode !== undefined) card.mode = info.mode
   if (info?.createdAt !== undefined) card.createdAt = info.createdAt
+  if (row?.updatedAt !== undefined && row.updatedAt > 0) card.updatedAt = row.updatedAt
+  if (member !== undefined) {
+    const note = liveNoteOf(department, card.name)
+    if (note !== undefined) card.note = note
+  }
   return card
+}
+
+/**
+ * The live note of a task (SPEC A13 point 2): the agent who works on a task writes ONE line
+ * `Stand: <what I am doing right now>` at the top of its description. Returns that line's text.
+ */
+export function liveNote(task: Pick<TeamTask, 'description'>): string | undefined {
+  for (const line of String(task.description ?? '').split(/\r?\n/)) {
+    const match = /^\s*(?:Stand|Status|Now)\s*:\s*(.+?)\s*$/i.exec(line)
+    if (match !== null) return match[1]!
+  }
+  return undefined
+}
+
+/** The live note of the task `name` has in progress (first one with a note), if any. */
+export function liveNoteOf(department: Department, name: string): string | undefined {
+  for (const task of department.tasks) {
+    if (task.ownerName !== name || task.status !== 'in_progress') continue
+    const note = liveNote(task)
+    if (note !== undefined) return note
+  }
+  return undefined
 }
 
 /** Ids of the lead's children that are neither active team members nor the lead itself. */

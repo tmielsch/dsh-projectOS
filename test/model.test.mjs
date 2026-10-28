@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   buildWorkspaces, levelCards, childCards, inLane, claimedTasks, summary, readableTitle,
-  baseName, laneOf, isHelpersId, nameOf, childIdsOf,
+  baseName, laneOf, isHelpersId, nameOf, childIdsOf, liveNote, liveNoteOf,
 } from '../.build/model.mjs'
 
 // Shaped like SPEC B7: byId rows, agentTeam on the lead, subagentCatalog on every parent.
@@ -179,4 +179,23 @@ test('retired members do not appear', () => {
 
 test('empty list gives no departments', () => {
   assert.deepEqual(buildWorkspaces({ ids: [], byId: {} }), [])
+})
+
+test('live note: first "Stand:" line of the description', () => {
+  assert.equal(liveNote({ description: 'Stand: prüfe Kante B2\nAbnahme: ...' }), 'prüfe Kante B2')
+  assert.equal(liveNote({ description: 'Abnahme\n  stand : zweite Zeile  ' }), 'zweite Zeile')
+  assert.equal(liveNote({ description: 'Standard ist gut' }), undefined)
+  assert.equal(liveNote({ description: '' }), undefined)
+})
+
+test('live note: shown on the group lead card only for the task in progress', () => {
+  const dep = {
+    leadId: 'lead', title: 't', cwd: '', leadRunning: false, members: [],
+    tasks: [
+      { id: 'a', revision: 1, subject: 'A', description: 'Stand: alt', status: 'completed', blockedBy: [], writeScopes: [], ownerName: 'strata', ready: true, writeScopeWarnings: [] },
+      { id: 'b', revision: 2, subject: 'B', description: 'Stand: jetzt Messung\nText', status: 'in_progress', blockedBy: [], writeScopes: [], ownerName: 'strata', ready: false, writeScopeWarnings: [] },
+    ],
+  }
+  assert.equal(liveNoteOf(dep, 'strata'), 'jetzt Messung')
+  assert.equal(liveNoteOf(dep, 'other'), undefined)
 })

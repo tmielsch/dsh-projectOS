@@ -7,6 +7,7 @@ import {
   inLane,
   isHelpersId,
   levelCards,
+  liveNote,
   nameOf,
   summary,
   type Department,
@@ -69,6 +70,8 @@ function Detail({ department, card, t, openSession, onClose }: {
         <dd>{t(`lane.${card.lane}` as Key)}</dd>
         {card.model !== undefined && (<><dt>{t('model')}</dt><dd>{card.model}</dd></>)}
         {card.mode !== undefined && (<><dt>{t('mode')}</dt><dd>{t(`mode.${card.mode}` as Key)}</dd></>)}
+        {card.updatedAt !== undefined && (<><dt>{t('lastActive')}</dt><dd>{new Date(card.updatedAt).toLocaleString()}</dd></>)}
+        {card.kind === 'group-lead' && (<><dt>{t('noteNow')}</dt><dd>{card.note ?? <span className="pos-empty">{t('noteNone')}</span>}</dd></>)}
         {card.error !== undefined && (<><dt className="pos-err">{t('error')}</dt><dd className="pos-err">{card.error}</dd></>)}
       </dl>
       {card.kind === 'group-lead' && (
@@ -78,6 +81,7 @@ function Detail({ department, card, t, openSession, onClose }: {
           {tasks.map((task) => (
             <div className="pos-task" key={task.id}>
               <strong>{task.subject}</strong>
+              {liveNote(task) !== undefined && <em className="pos-note-line">{liveNote(task)}</em>}
               <small>
                 {t(`status.${task.status === 'deleted' ? 'completed' : task.status}` as Key)}
                 {task.status === 'pending' ? ` · ${task.ready ? t('ready') : t('blocked')}` : ''}
@@ -243,6 +247,7 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
                               </strong>
                               <small>{cardSubtitle(card, t)}</small>
                               {card.model !== undefined && <small>{card.model}</small>}
+                              {card.note !== undefined && <em className="pos-note-line">{card.note}</em>}
                             </button>
                             <div className="pos-cardtools">
                               {card.children > 0 && (

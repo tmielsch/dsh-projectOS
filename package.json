@@ -1,6 +1,6 @@
 {
   "name": "@tmielsch/dsh-projectos",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "projectOS for DeepSeek Harness: a department manager page that shows the agent teams of a workspace as departments and work groups, with a worker-oriented kanban board.",
   "type": "module",
   "exports": {

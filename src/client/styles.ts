@@ -36,6 +36,7 @@ export const CSS = `
 .pos-crumb:hover{background:var(--dsw-alias-interactive-bg-hover,#333)}
 .pos-crumb[aria-current=true]{color:var(--dsw-alias-label-primary,#fff);font-weight:600}
 .pos-sep{color:var(--dsw-alias-label-tertiary,#999)}
+.pos-note-line{display:block;font-style:normal;font-size:11px;line-height:1.35;color:var(--dsw-alias-label-secondary,#bbb);margin-top:3px;white-space:normal}
 .pos-leadbtn{margin-left:10px;padding:3px 9px}
 .pos-hint{margin-left:auto;color:var(--dsw-alias-label-tertiary,#999);font-size:11px}
 .pos-cardwrap{display:flex;flex-direction:column;gap:4px}
