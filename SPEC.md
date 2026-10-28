@@ -318,8 +318,7 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 1. **Wie viel vom Task-Board-Plugin dürfen wir nutzen?** ~~erledigt~~ **entschieden am 2026-10-28, siehe A5: gar nicht.** Ist es nur Lesequelle, oder soll das Plugin dessen Hauptbuch
    mit beschreiben (dann liegt unsere Karte im selben `ledger-v2.json`)? Lizenz Apache-2.0 erlaubt das Kopieren
    der Kanban-Logik.
-2. **Zugang:** Reicht zunächst eine eigene Zeile in der Seitenleiste (C3 a) oder besteht der Mensch auf dem Knopf in der
-   Projektzeile (dann ändern wir Teile der Projektliste, was bei jedem DSH-Update bricht)?
+2. ~~Zugang~~ **entschieden am 2026-10-28, siehe A4.**
 3. **Quelle der Facharbeiter:** Vorschlag in B2 (Kindsitzungen über `parentSession` plus Mitgliederliste). Zu prüfen am echten
    Beispiel: ob der Browser die Kopfdaten **aller** Kindsitzungen eines Leads bekommt (Dienst `ctx.sessions`, Liste
    `session.list`) oder nur geöffnete. Messung steht aus.
@@ -328,7 +327,7 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
    sie alle als Abteilungen eines Projekts zeigen? (Der Wunsch in A1 sagt ja; offen ist nur, woran „gehört zum Projekt"
    erkannt wird: Arbeitsordner der Sitzung?)
 6. **Sprache der Oberfläche:** Deutsch und Englisch, oder zunächst nur Deutsch?
-7. **Größe des ersten Schnitts:** Lesende Ansicht aus C6 Punkt 1 als erstes Release.
+7. ~~Größe des ersten Schnitts~~ **entschieden am 2026-10-28, siehe A6 Punkt 4:** nur Arbeiter, Karte mit geclaimten Aufgaben.
 8. **Chat-Knopf in einer Sitzung ohne Team:** Soll er fehlen, deaktiviert sein oder zur Projektübersicht führen?
 9. ~~Wie hängt man weitere Plugins ein?~~ **entschieden am 2026-10-28, siehe A8: klein, kein System.** Ursprünglicher Vorschlag, bleibt als Richtschnur für die Schnittstelle: Vorschlag zur Diskussion: der Kern kennt nur den Begriff „Quelle“ (liefert Arbeiter,
    Aufgaben oder Zustände in einer festen kleinen Form); Agent-Teams ist die erste Quelle; eine neue Quelle ist ein kleines Modul, das
