@@ -36,6 +36,7 @@ export const CSS = `
 .pos-crumb:hover{background:var(--dsw-alias-interactive-bg-hover,#333)}
 .pos-crumb[aria-current=true]{color:var(--dsw-alias-label-primary,#fff);font-weight:600}
 .pos-sep{color:var(--dsw-alias-label-tertiary,#999)}
+.pos-leadbtn{margin-left:10px;padding:3px 9px}
 .pos-hint{margin-left:auto;color:var(--dsw-alias-label-tertiary,#999);font-size:11px}
 .pos-cardwrap{display:flex;flex-direction:column;gap:4px}
 .pos-cardrow{display:flex;gap:4px;align-items:stretch}

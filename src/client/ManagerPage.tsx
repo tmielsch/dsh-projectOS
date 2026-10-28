@@ -200,6 +200,9 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
                 </button>
               </Fragment>
             ))}
+            <button type="button" className="pos-btn pos-leadbtn" title={department.title} onClick={() => openSession(department.leadId)}>
+              {t('openLead')}
+            </button>
             <span className="pos-hint">{t('levelHint')}</span>
           </nav>
 
