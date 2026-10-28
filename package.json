@@ -14,6 +14,8 @@
   },
   "files": [
     "lib",
+    "agents",
+    "scripts/agents-block.mjs",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
@@ -21,7 +23,8 @@
   "scripts": {
     "build": "node scripts/build-client.mjs",
     "check": "tsc -p tsconfig.json",
-    "test": "node scripts/build-model.mjs && node --test test/*.test.mjs"
+    "test": "node scripts/build-model.mjs && node --test test/*.test.mjs",
+    "agents": "node scripts/agents-block.mjs"
   },
   "dsh": {
     "bundle": {
