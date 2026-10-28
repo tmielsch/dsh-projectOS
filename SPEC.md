@@ -140,10 +140,20 @@ Team-Projektion; die Hierarchie Experte → Facharbeiter ist deshalb aus dem Tea
 gesetzt aus `workspace.path`), `parentSession?` („Sitzung, aus der diese geforkt wurde"), `origin?: 'subagent'`
 („grobe Produktklassifizierung für ein Unteragenten-Kind"), `delegationDepth?`. Ein Unteragent ist damit an
 `origin === 'subagent'` plus `parentSession` erkennbar; das Team-Plugin verwendet `parentSession` ebenfalls (liest
-`agent.session.header.parentSession`, `agent-team/lib/index.js` Zeilen 404, 626, 766). **Noch ungemessen:** ob auch
-Teammitglieder `origin === 'subagent'` tragen und woran man Teammitglied von `delegate_task`-Facharbeiter im Kopf
-unterscheidet (Vorschlag: Teammitglied = steht in `agentTeam.members` der Wurzelsitzung; Facharbeiter = `origin
-=== 'subagent'` und `parentSession` zeigt auf ein Mitglied).
+`agent.session.header.parentSession`, `agent-team/lib/index.js` Zeilen 404, 626, 766). **Gemessen (Haiku-Helfer, vom Lead an den Zeilen nachgelesen):** Teammitglieder **und** `delegate_task`-Unteragenten laufen
+durch dieselbe Funktion (`TeamRoster.spawn` → `ctx.subagents.startContinuable`, `agent-team/lib/index.js` Zeile 674;
+`delegate_task` ruft dasselbe in `dsh-tool-subagent/lib/index.js` Zeile 557; Kopf geschrieben von `childSessionMeta`,
+`dsh-subagent/lib/index.js` Zeilen 470–485). Beide tragen daher `origin: 'subagent'` und `parentSession`. **Im Sitzungskopf
+gibt es kein Feld, das beide Arten trennt.** Der Deskriptor (`foldSubagentDescriptor`) sagt nur „ist ein Unteragent“,
+nicht welcher Art.
+**Folgerung (Vorschlag, aus den Messungen abgeleitet, noch nicht im Betrieb geprüft):** Die Art ergibt sich aus der
+Team-Projektion der Wurzelsitzung, die der Browser schon liest (`projectionsBySession[leadId].values.agentTeam.members`,
+`agent-team/lib/client.js` Zeile 239):
+- Kindsitzung, deren `id` in `members` steht → **Teammitglied (Experte)**;
+- Kindsitzung mit `origin === 'subagent'`, deren `parentSession` ein Mitglied ist → **Facharbeiter dieses Experten**;
+- Kindsitzung, deren `parentSession` die Wurzel ist, aber nicht in `members` steht → **eigener Helfer des Leads**.
+Offen: die Sitzungsdateien sind zstd-komprimiert und wurden nicht entpackt; der Kopf einer echten Teamsitzung wurde
+noch nicht angesehen (D3).
 Lokaler Patch `~/.dsh/patches/subagent-rolle.mjs` ergänzt das Feld `rolle` (Textbaustein aus `~/.dsh/rollen/`).
 
 **B3 — Task-Board-Plugin (extern).** `@linxin666/dsh-client-ui-task-board` 0.4.5 (Apache-2.0, Quelle im Repo
@@ -245,9 +255,9 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
    der Kanban-Logik.
 2. **Zugang:** Reicht zunächst eine eigene Zeile in der Seitenleiste (C3 a) oder besteht der Mensch auf dem Knopf in der
    Projektzeile (dann ändern wir Teile der Projektliste, was bei jedem DSH-Update bricht)?
-3. **Quelle der Facharbeiter:** `delegate_task`-Unteragenten stehen nicht in der Team-Projektion (B2). Entweder liest das Plugin
-   die Sitzungsliste (Eltern-Kind-Beziehung der Sitzungen) oder die Experten melden Facharbeiter in eine Datei. Zu messen:
-   ob die Sitzungsliste die Beziehung trägt.
+3. **Quelle der Facharbeiter:** Vorschlag in B2 (Kindsitzungen über `parentSession` plus Mitgliederliste). Zu prüfen am echten
+   Beispiel: ob der Browser die Kopfdaten **aller** Kindsitzungen eines Leads bekommt (Dienst `ctx.sessions`, Liste
+   `session.list`) oder nur geöffnete. Messung steht aus.
 4. **Name der Ebene:** „Department" (Abteilung) für den Teamlead und „Gruppe" für den Experten — oder anderes Wort?
 5. **Mehrere Teams pro Projekt:** Jede Sitzung, die als Team beginnt, ist ein eigenes Team (B1). Soll die Manager-Ansicht
    sie alle als Abteilungen eines Projekts zeigen? (Der Wunsch in A1 sagt ja; offen ist nur, woran „gehört zum Projekt"
