@@ -15,7 +15,11 @@
   "files": [
     "lib",
     "agents",
+    "patches",
+    "rollen",
+    "dsh-links.json",
     "scripts/agents-block.mjs",
+    "scripts/link-dsh.mjs",
     "cordis.patch.yml",
     "README.md",
     "LICENSE"
@@ -24,7 +28,8 @@
     "build": "node scripts/build-client.mjs",
     "check": "tsc -p tsconfig.json",
     "test": "node scripts/build-model.mjs && node --test test/*.test.mjs",
-    "agents": "node scripts/agents-block.mjs"
+    "agents": "node scripts/agents-block.mjs",
+    "links": "node scripts/link-dsh.mjs"
   },
   "dsh": {
     "bundle": {

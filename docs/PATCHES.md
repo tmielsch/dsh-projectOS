@@ -32,7 +32,13 @@ Mitglieder (`retired`) zählen nicht mehr mit (Kern Zeile 665).
 `dsh-fork-tree` = eigenes Repo, Fork-Tab für `dsh-better-sidebar`, **kein** Bezug zu Agent-Teams; `dsh-agent-compact` = eigenes Release
 (`@tmielsch/rolling-compaction`), eigenes Repo; `dsh-houdini`, `cleanup-agents` = kein Repo, Zweck nicht belegt.
 
-## Vorschlag, welche davon in dsh-projectOS gehören (noch keine Entscheidung)
+## Entschieden am 2026-10-29 (SPEC A14): Team-Patches liegen jetzt hier, `team-rente` bleibt draußen
+- **Eingezogen** in `patches/` (und als Verweise nach `~/.dsh/patches/` gehängt): Nr. 1–6, 9, 10, 11 samt Selbsttests und den Notizen `KIND-SITZUNGEN.md`, `UEBERGABE-2026-10-25-unteragenten.md`; die Rollen in `rollen/`.
+- **`delegate-send` und `teammate-model`** wurden dabei an einer Stelle geändert: der Vergleich „wurde diese Datei direkt gestartet“ löst jetzt den Verweis auf (`realpathSync`), sonst hätte ihr Selbsttest über den Verweis nichts mehr geprüft (MESSUNG: `argv[1]` bleibt der Verweispfad, `import.meta.url` ist der echte Pfad). Die Fassung vor der Änderung liegt in `~/.dsh/patches/backup-projectos-links/`.
+- **Nr. 14 `team-rente` (ExpertKT)** bleibt draußen und steht als externe Abhängigkeit in der `README.md`.
+- **Bleiben draußen:** Nr. 7, 8 (Browser-Teile, doctor prüft Nr. 8 nicht), 12, 13, `dsh-fork-tree`, `dsh-agent-compact`.
+
+## Frühere Fassung dieses Vorschlags (vor der Entscheidung)
 - **Gehören hinein** (betreffen Teams, Unteragenten, Ziele): Nr. 1–6, 9, 10, 11 und die Rollen aus `~/.dsh/rollen/`. Sie werden Unterordner
   `patches/` mit demselben `--status`/`--revert`-Verhalten und je einem Selbsttest.
 - **Bleiben draußen** (kein Team-Bezug): Nr. 12, 13 (Anbieter und Prompt), `dsh-fork-tree`, `dsh-agent-compact`.

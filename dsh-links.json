@@ -1,0 +1,86 @@
+{
+  "comment": "Was link-dsh.mjs aus diesem Repo nach ~/.dsh haengt. Die Sicherungsordner patches/backup-* und alles andere in ~/.dsh bleiben, wo sie sind.",
+  "links": [
+    {
+      "from": "patches/allow-child-goal-resume.mjs",
+      "to": "patches/allow-child-goal-resume.mjs"
+    },
+    {
+      "from": "patches/child-goal-resume.mjs",
+      "to": "patches/child-goal-resume.mjs"
+    },
+    {
+      "from": "patches/allow-child-session-routing.mjs",
+      "to": "patches/allow-child-session-routing.mjs"
+    },
+    {
+      "from": "patches/child-session-routing.mjs",
+      "to": "patches/child-session-routing.mjs"
+    },
+    {
+      "from": "patches/allow-subagent-goals.mjs",
+      "to": "patches/allow-subagent-goals.mjs"
+    },
+    {
+      "from": "patches/goals-for-subagents.mjs",
+      "to": "patches/goals-for-subagents.mjs"
+    },
+    {
+      "from": "patches/allow-subagent-model-fields.mjs",
+      "to": "patches/allow-subagent-model-fields.mjs"
+    },
+    {
+      "from": "patches/subagent-model-fields.mjs",
+      "to": "patches/subagent-model-fields.mjs"
+    },
+    {
+      "from": "patches/allow-subagent-rolle.mjs",
+      "to": "patches/allow-subagent-rolle.mjs"
+    },
+    {
+      "from": "patches/subagent-rolle.mjs",
+      "to": "patches/subagent-rolle.mjs"
+    },
+    {
+      "from": "patches/allow-subagent-files.mjs",
+      "to": "patches/allow-subagent-files.mjs"
+    },
+    {
+      "from": "patches/subagent-files.mjs",
+      "to": "patches/subagent-files.mjs"
+    },
+    {
+      "from": "patches/delegate-send.mjs",
+      "to": "patches/delegate-send.mjs"
+    },
+    {
+      "from": "patches/teammate-model.mjs",
+      "to": "patches/teammate-model.mjs"
+    },
+    {
+      "from": "patches/teammate-model-test.mjs",
+      "to": "patches/teammate-model-test.mjs"
+    },
+    {
+      "from": "patches/goal-await.mjs",
+      "to": "patches/goal-await.mjs"
+    },
+    {
+      "from": "patches/goal-await-test.mjs",
+      "to": "patches/goal-await-test.mjs"
+    },
+    {
+      "from": "patches/KIND-SITZUNGEN.md",
+      "to": "patches/KIND-SITZUNGEN.md"
+    },
+    {
+      "from": "patches/UEBERGABE-2026-10-25-unteragenten.md",
+      "to": "patches/UEBERGABE-2026-10-25-unteragenten.md"
+    },
+    {
+      "from": "rollen",
+      "to": "rollen",
+      "kind": "dir"
+    }
+  ]
+}
