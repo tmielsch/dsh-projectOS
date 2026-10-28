@@ -95,6 +95,22 @@ Entschieden: (1) eigene Zeile **neben dem Task-Board** in der Seitenleiste (Weg 
 **Knopf im Chat** neben „Existing task controls“, der direkt zum **relevanten Team** im Manager führt. Der Knopf in
 der Projektzeile (Wunsch aus A1) bleibt zurückgestellt, bis es im DSH-Kern einen Slot dafür gibt.
 
+### A5 — Task-Board wird nicht benutzt, 2026-10-28
+
+> „momentan benutzen wir das gar nicht, weil das halt irgendwie ein fremdes Plugin ist, keiner weiss so richtig,
+> wie das genutzt wird, es beißt sich ein bisschen mit den normalen Magent-Teams, und wenn ich es mal nutzen
+> wollte, gab es irgendwelche Fehler mit dem Board, deswegen bin ich so ein bisschen verbrannt damit und will
+> das eigentlich so ein bisschen ignorieren, aber vom Ding her ist die Idee gut, ein Kanban hier mit einzubauen,
+> ist genial, es muss halt nur richtig gemacht."
+
+Entschieden (Antwort auf D1): **dsh-projectOS hängt nicht am Task-Board-Plugin.** Es liest sein Hauptbuch nicht und
+schreibt nicht hinein; es läuft auch, wenn das Task-Board abgeschaltet ist. Die Kanban-Idee bleibt und wird **richtig**
+gebaut, auf den Daten des Agent-Teams-Plugins (Mitglieder, gemeinsame Aufgaben, Abhängigkeiten; B1), die der Mensch
+tatsächlich benutzt. Das Task-Board bleibt unberührt stehen; wir schalten es nicht ab und ändern es nicht.
+Folgerung für den Bau: Wiederverwendung des Task-Board-**Codes** ist wegen der Kopplung (B3: Controller, Store,
+Übersetzungen) und der Erfahrung des Menschen nicht der Weg; höchstens als Vorlage für das Ziehen und Ablegen (Apache-2.0,
+Änderungshinweis nötig). Das Arbeiter-Kanban wird klein und neu geschrieben.
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -184,7 +200,7 @@ mittleren Bereich eingehängt (Slots des Shell-Layouts).
 ## C. Vorschläge des Agenten (noch keine Entscheidungen)
 
 ### C1 — Bausteine statt Neubau
-Das Plugin **liest** die Team-Projektion (B1), die Facharbeiter und das Task-Board-Hauptbuch (B3) und schreibt
+Das Plugin **liest** die Team-Projektion (B1) und die Facharbeiter (über die Sitzungsköpfe, B2) und schreibt
 nur seine eigenen Dateien: Profile (`~/.dsh/team-profile/…`) und eigene Ansichtseinstellungen. Gemeinsame
 Aufgaben, Abhängigkeiten, Besitzer und Bereitschaft werden **nicht** nachgebaut, sondern aus `TeamTaskView`
 gelesen.
@@ -218,13 +234,13 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 2. Arbeiter-Kanban einer Sitzung (Experten als Karten).
 3. Facharbeiter hinzunehmen (braucht Quelle, siehe D3).
 4. Profile lesen und anzeigen, dann bearbeiten.
-5. Verbindung zum Task-Board (Aufgabenkarten ↔ Arbeiter).
+5. Aufgaben-Ansicht auf den gemeinsamen Aufgaben des Agent-Teams (Karte = `TeamTaskView`, mit Besitzer und `blockedBy`).
 
 ---
 
 ## D. Offene Fragen (kurze Liste; die ersten zwei werden zuerst geklärt)
 
-1. **Wie viel vom Task-Board-Plugin dürfen wir nutzen?** (offen, Frage an den Menschen gestellt am 2026-10-28) Ist es nur Lesequelle, oder soll das Plugin dessen Hauptbuch
+1. **Wie viel vom Task-Board-Plugin dürfen wir nutzen?** ~~erledigt~~ **entschieden am 2026-10-28, siehe A5: gar nicht.** Ist es nur Lesequelle, oder soll das Plugin dessen Hauptbuch
    mit beschreiben (dann liegt unsere Karte im selben `ledger-v2.json`)? Lizenz Apache-2.0 erlaubt das Kopieren
    der Kanban-Logik.
 2. **Zugang:** Reicht zunächst eine eigene Zeile in der Seitenleiste (C3 a) oder besteht der Mensch auf dem Knopf in der
