@@ -345,6 +345,22 @@ mittleren Bereich eingehängt (Slots des Shell-Layouts).
 - **Nicht gemessen:** ob ein Browser-Plugin diese Host-Dienste direkt erreicht oder ein eigener Host-Teil nötig ist (Vermutung: eigener Host-Teil nötig, so macht es das
   Task-Board); ob ein Lauf tatsächlich funktioniert.
 
+**B7 — Bauweise eines Browser-Plugins und Datenquelle im Browser (MESSUNG, 2026-10-28; Haiku-Helfer, vom Lead an den Dateien nachgelesen).**
+Wäre eine Zeile falsch, stünde in der genannten Datei etwas anderes.
+- **Paketform.** `package.json` trägt `"exports": {"./client": {"default": "./lib/client.js"}}` und einen Block `"dsh": {"bundle": {"patch": "./cordis.patch.yml"}, "client": {"platform": "web", "inject": [<Paketnamen der benötigten Dienste>]}}`
+  (Vorbilder: `~/dsh-agent-compact/package.json`, `@linxin666/dsh-client-ui-task-board/package.json`, `@deepseek-ai/dsh-experimental-client-ui-agent-team/package.json`). `react` ist Peer-Abhängigkeit und wird **nicht** mitgebaut.
+- **Einstieg.** Die gebaute Datei ruft `window.__ModuleLoader__.load({id, factory})` auf; die Fabrik gibt `exports.apply(ctx)` und `exports.inject` zurück (`dsh-agent-compact/scripts/build-client.mjs` Z. 125–147; Agent-Teams `lib/client.js` Z. 455–511). `inject` ist die Liste der Dienste, die in `ctx` ankommen (Agent-Teams: `["sessions","uiWorkspace","slots","locale"]`).
+- **Bau.** esbuild bündelt die React-Ansicht (`format: 'cjs'`, `jsx: 'automatic'`, `external: ['react','react/jsx-runtime','react/jsx-dev-runtime']`, `platform: 'browser'`, `target: 'es2020'`; `build-client.mjs` Z. 46–58) und schreibt `lib/client.js` mit dem Kopf `window.__ModuleLoader__.load(...)` davor. `tsconfig.client.json` mit `jsx: react-jsx`, `moduleResolution: Bundler`, `noEmit`. Kein tsdown nötig.
+- **Profil.** Eigene Pakete stehen als Release-URL in `~/.dsh/profiles/web/package.json` (`"@tmielsch/rolling-compaction": "https://github.com/…/releases/download/…tgz"`); `file:`-Pfade sind ebenfalls möglich (`vendor/`). `cordis.patch.yml` im Paket ist nur nötig, wenn ein Host-Teil eingehängt wird. Ein Browser-Plugin allein braucht ihn nicht.
+- **Zwei Einhängungen.** Zeile in der Seitenleiste: `ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({name:'sidebar.panellist', id, order, label: () => t('…')}, IconKomponente))`. Seite im mittleren Bereich: `ctx.slots.inject('main', () => ctx.slots.register({name:'main', key: id, inject: () => ({…}) }, SeitenKomponente))`. So macht es auch `dsh-client-ui-schedule/lib/client.js` Z. 6794–6811 (`PANEL_ID`, `order: 10`).
+- **Daten im Browser.** Die Seitenkomponente bekommt als Standardprops `useSessions`, `useWorkspaces`, `useSessionStatus` (so wie `TaskDetail` von `dsh-client-ui-schedule`: `Pick<PropsRuntime<'main'>, 'useSessions' | 'useWorkspaces'>`). `useSessions(state => …)` liefert `SessionListState {ids, byId, phase, projectionsBySession}`
+  (`dsh-api-session-controller/lib/types/client/sessions/service.d.ts` Z. 40–52). Jede Zeile `byId[id]` trägt `id, displayTitle, cwd?, parentId?, origin?: 'subagent', running, updatedAt, projectionValues?`. `projectionsBySession[leadId].values.agentTeam` ist `TeamProjection {members, tasks, failure?}`;
+  Mitglied `{id, name, role: 'lead'|'teammate', phase: 'provisioning'|'active'|'failed', error?}` (die Zustände `running|inactive` des Agent-Teams-Knopfs werden dort aus `useSessionStatus`/`byId[id].running` abgeleitet, `TeamMemberRow` Z. 88–95); Aufgabe `TeamTaskView` wie in B1.
+  **Facharbeiter (löst D3):** jede Sitzung trägt in ihrer Projektion `subagentCatalog: [{id, createdAt, mode: 'one-shot'|'continuable'|'unknown', label?}]` (direkte Kinder, `dsh-subagent/lib/types/projection-types.d.ts` Z. 7–20). Der Browser trägt diese Kinder selbst in `byId` ein (`parentId`, `origin: 'subagent'`, `displayTitle`; `dsh-api-session-controller/lib/client.js` Z. 3514–3535). Facharbeiter eines Experten = `subagentCatalog` der Projektion des Experten.
+  Der Titel eines Facharbeiters ist sein Label (z. B. „Packaging eines DSH-Browser-Plugins klären“); eine Rolle wie `redteam` steht dort nur, wenn sie im Label steht.
+- **Sitzung öffnen.** `ctx.uiWorkspace.openSession(id)` bzw. `openSession({parentSessionId, childSessionId, mode: 'continuable'})` (Agent-Teams `lib/client.js` Z. 478–490).
+- **Nicht geprüft:** ob nach dem Hinzufügen eines Plugins ein Neustart von `dsh web` genügt oder die Weboberfläche neu gebaut werden muss (SCHÄTZUNG: Neustart genügt, der Host liefert `dsh.client`-Pakete unter `/plugins/<id>/client.js` aus, `dsh-client-modules/lib/index.js` ~Z. 713–719, nur vom Helfer gelesen); ob `byId` alle Sitzungen des Workspaces enthält oder nur die in der Liste sichtbaren (die Liste `ids` kommt vom Host mit allen Sitzungen, Filterung liegt beim Verbraucher: Kommentar in `service.d.ts` „the store carries every row“); die Anordnung (`order`) der Zeile gegenüber Task-Board und Zeitplan.
+
 **B5 — Profile heute.** Es gibt Agent-Presets, Permission-Presets und Modellauswahl als eigene Plugins
 (`dsh-client-ui-agent-preset`, `…-permission-presets`, `…-model-selection`, `…-settings-subagent`). Ein
 **Team-Profil** (Abteilung/Gruppe) gibt es nicht; `~/.dsh/team-profile/` existiert nicht.
@@ -412,7 +428,7 @@ Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erk
    mit beschreiben (dann liegt unsere Karte im selben `ledger-v2.json`)? Lizenz Apache-2.0 erlaubt das Kopieren
    der Kanban-Logik.
 2. ~~Zugang~~ **entschieden am 2026-10-28, siehe A4.**
-3. **Quelle der Facharbeiter:** Vorschlag in B2 (Kindsitzungen über `parentSession` plus Mitgliederliste). Zu prüfen am echten
+3. ~~Quelle der Facharbeiter~~ **gemessen am 2026-10-28, siehe B7 (`subagentCatalog`).** Ursprüngliche Frage: Vorschlag in B2 (Kindsitzungen über `parentSession` plus Mitgliederliste). Zu prüfen am echten
    Beispiel: ob der Browser die Kopfdaten **aller** Kindsitzungen eines Leads bekommt (Dienst `ctx.sessions`, Liste
    `session.list`) oder nur geöffnete. Messung steht aus.
 4. ~~Name der Ebene~~ **deutsch entschieden am 2026-10-28, siehe A9 Punkt 1;** englische Wörter offen (D11).
