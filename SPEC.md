@@ -162,6 +162,20 @@ einhängen lassen (zunächst Agent-Teams, danach das Aufgaben-/Zeitplan-Plugin v
 Kern umgebaut wird. Wie diese Einhängung aussieht, ist **offen** (D9). Welches Plugin der Mensch mit „Automation-Tasks / Chrome-Jobs“ meint,
 ist **offen** (D10): gemessen wurde nur das mit DSH gelieferte `dsh-schedule` (Erinnerungen, Cron, Aufgaben-Seite).
 
+### A8 — Klein halten, 2026-10-28
+
+> „Ja, scheint dann DSH-Scheduled zu sein. In der Oberfläche steht Automation Tasks. Ja, Kleinhalten. Das können ja auch
+> Agents machen, dann es geht nur darum, eine gute Architektur zu haben, die leicht erweiterbar ist. Da muss jetzt kein
+> dediziertes Hotswap oder irgendein System drin sein, was irgendwie komplex ist."
+
+Entschieden:
+1. „Automation Tasks“ ist die Beschriftung der Oberfläche von **`dsh-schedule`** / `dsh-client-ui-schedule` (gemessen:
+   `dsh-client-ui-schedule/lib/client.js` Zeile 6379, `"panel": "Automation tasks"`). Es gehört zu DSH und darf als Quelle
+   eingebunden werden. (Antwort auf D10.)
+2. **Erweiterbarkeit durch gute Architektur, nicht durch ein System.** Kein Hot-Swap, keine Plugin-Registry mit Laufzeitlogik,
+   keine Konfigurationssprache. Der Kern ist klein und hat eine klare, schmale Schnittstelle für „Quelle“; eine neue Quelle ist
+   ein Modul im Repo, das ein Agent in kurzer Zeit nachbauen kann. (Antwort auf D9.)
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -316,8 +330,8 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 6. **Sprache der Oberfläche:** Deutsch und Englisch, oder zunächst nur Deutsch?
 7. **Größe des ersten Schnitts:** Lesende Ansicht aus C6 Punkt 1 als erstes Release.
 8. **Chat-Knopf in einer Sitzung ohne Team:** Soll er fehlen, deaktiviert sein oder zur Projektübersicht führen?
-9. **Wie hängt man weitere Plugins ein?** Vorschlag zur Diskussion: der Kern kennt nur den Begriff „Quelle“ (liefert Arbeiter,
+9. ~~Wie hängt man weitere Plugins ein?~~ **entschieden am 2026-10-28, siehe A8: klein, kein System.** Ursprünglicher Vorschlag, bleibt als Richtschnur für die Schnittstelle: Vorschlag zur Diskussion: der Kern kennt nur den Begriff „Quelle“ (liefert Arbeiter,
    Aufgaben oder Zustände in einer festen kleinen Form); Agent-Teams ist die erste Quelle; eine neue Quelle ist ein kleines Modul, das
    sich beim Kern anmeldet. Die Form der Anmeldung folgt dem Muster, das DSH selbst benutzt (Slots, `ctx.slots.inject`).
-10. **Was ist „Automation-Tasks“?** Gemessen im Profil: `dsh-schedule` (Host-weite Erinnerungen, Zeitplan) samt `dsh-client-ui-schedule`
+10. ~~Was ist „Automation-Tasks“?~~ **geklärt, siehe A8 Punkt 1.** Gemessen war: Gemessen im Profil: `dsh-schedule` (Host-weite Erinnerungen, Zeitplan) samt `dsh-client-ui-schedule`
     (Aufgaben-Seite) im Bundle `dsh-experimental-schedule-bundle`. Von Chrome-Jobs kommt dort nichts vor.
