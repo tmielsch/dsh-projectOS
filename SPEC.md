@@ -111,6 +111,45 @@ Folgerung für den Bau: Wiederverwendung des Task-Board-**Codes** ist wegen der 
 Übersetzungen) und der Erfahrung des Menschen nicht der Weg; höchstens als Vorlage für das Ziehen und Ablegen (Apache-2.0,
 Änderungshinweis nötig). Das Arbeiter-Kanban wird klein und neu geschrieben.
 
+### A6 — Grundlage, Wrapper, Patches und erste Ansicht, 2026-10-28
+
+> „ich will nicht auf Third-Party-Plugins bauen, sondern halt auf die Plugins, die mit DSH kommen, und das ist das
+> Agent-Teams-Plugin, und ich will halt einfach nur einen schönen Wrapper haben und das Ganze halt um diese
+> Team-Presets und so weiter ergänzen. Es sollte im Prinzip gar kein allzu riesiger Eingriff sein"
+
+> „ich DSH so modifiziert habe, dass ich Subagents direkt anschreiben kann und sowas, da ist eine ganze Liste von
+> Sachen, die nicht offiziell sind, die ich quasi eingebaut habe, zum Beispiel Team-Member-Begrenzung habe ich
+> rausgenommen, dass man Sub-Agents keine Dateien schicken kann, habe ich rausgenommen, all solche Sachen so, und
+> das sollte im Prinzip alles da mit reingebundelt werden, dass es aufhört, so ein Flickenteppich zu sein"
+
+> „es können auch gerne einzelne Plugins bleiben oder so, so Sub-Plugins gibt es ja auch, dass man sagt, okay, wir
+> haben ProjectOS und [dazu] Dependency-Plugins, davon sind halt die Patches, die ich gemacht habe. Ich weiss nicht,
+> ob ich dafür jetzt neue Repos anlegen muss, […] da müsstest du mir eine Liste machen oder so. Aber wir können das
+> auch gerne alles einfach in dem Repo lassen und […] die Dependencies als Teil des Repos bauen und dann irgendwann
+> später Standalone umbauen."
+
+> „das Kanban zeigt nur die ganzen Worker und wo sie gerade sind, und wenn ich dann da draufklicke, dann poppt quasi
+> die Karte für den Worker auf und da sind quasi seine Aufgaben drin, die er geclaimed hat, und das spielt dann halt
+> mit dem Shared-Team-Tasks-Ding halt zusammen, nicht mit dem Taskboard, dem Third-Party-Ding, sondern mit dem
+> Originalen. Um Verwirrung zu vermeiden, können wir es halt auch wirklich deaktivieren, weil ich benutze es eh
+> nicht so, also das Third-Party."
+
+Entschieden:
+1. **Grundlage sind nur Pakete, die mit DSH kommen** (Agent-Teams: `dsh-experimental-agent-team`, `…-tool-agent-team`,
+   `…-client-ui-agent-team`). Keine Abhängigkeit von Third-Party-Plugins.
+2. **dsh-projectOS ist ein Wrapper** um das Agent-Teams-Plugin, ergänzt um Team-Profile und Manager-Ansicht, ohne
+   großen Eingriff in dessen Kern.
+3. **Die eigenen Patches des Menschen werden mit eingebunden** (Teammitglied-Begrenzung entfernt, Dateien an Unteragenten
+   senden, Unteragenten direkt anschreiben u. a.), damit der „Flickenteppich“ aufhört. Zunächst **alles in diesem Repo**
+   als Teile (Unterordner/Unterpaket); später darf es in eigene Repos zerlegt werden („Standalone umbauen“).
+   Der Mensch wünscht eine **Liste**, welche Patches es gibt und was davon eigene Repos bräuchte (Inventur läuft).
+4. **Erste Ansicht:** Das Kanban zeigt **nur die Arbeiter** und wo sie gerade sind (Karte = Arbeiter). Ein Klick öffnet
+   die **Karte des Arbeiters** mit den Aufgaben, die er **geclaimed** hat; diese kommen aus den **gemeinsamen Aufgaben
+   des Agent-Teams** (`TeamTaskView`, `ownerName`), nicht aus dem Third-Party-Task-Board.
+5. **Das Third-Party-Task-Board darf deaktiviert werden**, um Verwirrung zu vermeiden. Das geschieht erst bei der
+   Einbindung unseres Plugins, mit vorherigem Speicherpunkt des Konfigurations-Repos, nicht vorher.
+6. Aufgaben-Ansicht als eigenes Kanban (Karte = Aufgabe) bleibt Möglichkeit für später, nicht erster Schnitt.
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
