@@ -86,6 +86,15 @@ Kanban-Brett, das nach Arbeitern statt nach Aufgaben sortiert ist, und bearbeitb
 > „https://github.com/tmielsch/dsh-projectOS Ist public, aber GH ist ja auch installiert. Es ist ein leeres
 > Repo, kannst du machen, was du willst"
 
+### A4 — Zugang und Chat-Knopf, 2026-10-28
+
+> „Ja neben dem taskboard, und dann einen shortcut im chat irgendwo. Vllt neben den existing task controls
+> button einen button, der einen direkt zum relevanten team im manager schickt?"
+
+Entschieden: (1) eigene Zeile **neben dem Task-Board** in der Seitenleiste (Weg a aus C3); (2) zusätzlich ein
+**Knopf im Chat** neben „Existing task controls“, der direkt zum **relevanten Team** im Manager führt. Der Knopf in
+der Projektzeile (Wunsch aus A1) bleibt zurückgestellt, bis es im DSH-Kern einen Slot dafür gibt.
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -154,6 +163,12 @@ mittleren Bereich eingehängt (Slots des Shell-Layouts).
   gehören zur **Sitzungs**zeile). Ein dritter Knopf in der Projektzeile ist **ohne Änderung an `client.js` nicht
   möglich**. Weg über den Autor von DSH: ein neuer Slot `sidebar.workspaces.project.row.action`, analog zu
   `session.row.action` (Zeile 4314). Nicht geprüft: ob `ProjectRowItem` über Cordis-Dienste austauschbar ist.
+- **Chat-Knopf (MESSUNG):** Der Knopf „Existing task controls“ stammt aus dem Plugin `dsh-codex-connect`
+  (`lib/client.js` Zeilen 7408 und 7774–7779) und hängt im Slot `conversation.input.right` (`kind: 'list'`,
+  `scope: 'session'`, deklariert in `dsh-client-ui-conversation/lib/types/client/contract/slots.d.ts` Zeile 235). Es ist
+  ein **Listen-Slot**: mehrere Plugins können nebeneinander Einträge setzen, `order` bestimmt die Reihenfolge (dort 30).
+  Unser Knopf geht damit **offiziell** an dieselbe Stelle, mit eigener `id` und `order`. Der Slot gilt je Sitzung, die
+  Komponente kennt also die Sitzung, in der sie steht (Lesart; Props nicht vollständig gelesen).
 - **Seitenleisten-Seite eines Plugins (MESSUNG, Vorlage):** `@linxin666/dsh-client-ui-task-board`
   `src/client/native-panel.tsx` Zeilen 116–131 registriert `slots.inject('sidebar.panellist', …register({name:
   'sidebar.panellist', id, order, label}, Icon))` für die Zeile in der Seitenleiste und `slots.inject('main', …
@@ -181,11 +196,12 @@ aktueller Aufgabe (aus den gemeinsamen Aufgaben, `ownerName`), letztem Lebenszei
 Sitzung; ein Doppelklick „taucht ab" in das Brett der nächsten Ebene (Abteilung → Gruppe → Facharbeiter).
 Aufgaben-Kanban (die Karte ist eine Aufgabe) bleibt als zweite Ansicht derselben Daten erhalten.
 
-### C3 — Zugang
-Ein Knopf in der Projektzeile ist laut B4 **gemessen nicht** über einen Slot möglich. Zwei Wege: (a) eine eigene Zeile in
-`sidebar.panellist` („Projekt-Manager"), die für das **gerade gewählte Projekt** öffnet; (b) ein Knopf in
-`conversation.session.header.actions` jeder Teamsitzung. Wunsch des Menschen (dritter Knopf in der Projektzeile)
-bräuchte einen neuen Slot im DSH-Kern (Bitte an den Autor, siehe B4) — siehe D2.
+### C3 — Zugang (entschieden in A4, hier die Umsetzung)
+(a) Zeile „Projekt-Manager“ in `sidebar.panellist` neben dem Task-Board, die die Seite im Slot `main` öffnet, wie es
+`native-panel.tsx` des Task-Boards vormacht (B4). (b) Knopf in `conversation.input.right`; ein Klick öffnet die
+Manager-Seite **auf dem Team, zu dem die aktuelle Sitzung gehört** (Lead: sein eigenes Team; Teammitglied oder
+Unteragent: das Team seiner Wurzelsitzung über `parentSession`). Ist die Sitzung kein Team: Knopf ausgeblendet oder
+führt zur Projektübersicht (offen, siehe D8). (c) Knopf in der Projektzeile erst, wenn der Slot im Kern existiert.
 
 ### C4 — Profile bearbeiten
 Eine Ansicht „Profile": links die Ebenen (Abteilung, Gruppe, Facharbeiter), rechts das geltende Profil mit
@@ -208,7 +224,7 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 
 ## D. Offene Fragen (kurze Liste; die ersten zwei werden zuerst geklärt)
 
-1. **Wie viel vom Task-Board-Plugin dürfen wir nutzen?** Ist es nur Lesequelle, oder soll das Plugin dessen Hauptbuch
+1. **Wie viel vom Task-Board-Plugin dürfen wir nutzen?** (offen, Frage an den Menschen gestellt am 2026-10-28) Ist es nur Lesequelle, oder soll das Plugin dessen Hauptbuch
    mit beschreiben (dann liegt unsere Karte im selben `ledger-v2.json`)? Lizenz Apache-2.0 erlaubt das Kopieren
    der Kanban-Logik.
 2. **Zugang:** Reicht zunächst eine eigene Zeile in der Seitenleiste (C3 a) oder besteht der Mensch auf dem Knopf in der
@@ -222,3 +238,4 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
    erkannt wird: Arbeitsordner der Sitzung?)
 6. **Sprache der Oberfläche:** Deutsch und Englisch, oder zunächst nur Deutsch?
 7. **Größe des ersten Schnitts:** Lesende Ansicht aus C6 Punkt 1 als erstes Release.
+8. **Chat-Knopf in einer Sitzung ohne Team:** Soll er fehlen, deaktiviert sein oder zur Projektübersicht führen?
