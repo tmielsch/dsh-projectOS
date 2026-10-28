@@ -317,8 +317,8 @@ mittleren Bereich eingehängt (Slots des Shell-Layouts).
 - **`send_message` endet an der Teamgrenze.** `resolveActiveMember` (`agent-team/lib/index.js` Zeilen 350–366) kennt nur `"lead"` (die Wurzel des
   **eigenen** Teams) und aktive Mitglieder in `state.members` des **eigenen** Teams; sonst `TEAM_MEMBER_NOT_FOUND` oder `TEAM_MEMBER_RESTING`. Ein Abteilungsleiter
   kann mit diesem Werkzeug keinen anderen Abteilungsleiter erreichen. `list_agents` zeigt ebenfalls nur das eigene Team.
-- **Der Kern kann trotzdem jede Sitzung ansprechen, nur nicht über dieses Werkzeug.** `dsh-schedule` legt eine fällige Erinnerung so in eine **beliebige**
-  Sitzung (`dsh-schedule/lib/index.js` Zeilen 1576–1597): `ctx.sessionController.resolveAgent(task.sessionId)` liefert den Agenten der Sitzung, dann
+- **Der Kern kann trotzdem jede Sitzung ansprechen, nur nicht über dieses Werkzeug.** `dsh-schedule` legt eine fällige Erinnerung so in die Sitzung, die im
+  Zeitplan-Eintrag steht (`task.sessionId`; der Mechanismus selbst nimmt eine **beliebige** ID) (`dsh-schedule/lib/index.js` Zeilen 1576–1597): `ctx.sessionController.resolveAgent(task.sessionId)` liefert den Agenten der Sitzung, dann
   `agent.followup(createUserMessage({content, source: { kind: "schedule" }}))` und `ctx.sessions.flush(agent.session)`. Der Browser-Weg ist
   `session.prompt` (`dsh-api-session-controller/lib/index.js` Zeile 863) mit beliebiger `sessionId`. Eine Nachricht von Abteilungsleiter zu Abteilungsleiter
   braucht daher **eine neue, kleine Host-Schicht** (ein Werkzeug, das nach diesem Muster arbeitet), aber **keinen Umbau des Kerns**.
@@ -326,7 +326,8 @@ mittleren Bereich eingehängt (Slots des Shell-Layouts).
   danach über den Befehl `/permission <id>`, der Auftrag über `session.prompt` mit `mode: 'queue'` (Vorlage, nur die Dienstaufrufe gelesen: Task-Board
   `host-runner.ts`). Eine so angelegte Sitzung ohne `parentSession` gilt als Lead (`tryMembership`, `agent-team/lib/index.js` Zeilen 391–445) und darf Teammitglieder starten
   (aus dem Code gelesen, **nicht** im Lauf geprüft).
-- **Fremde Sitzung lesen:** kein Werkzeug des Modells liest Verlauf oder Projektion einer fremden Sitzung (`dsh-tool-subagent` nutzt `sessions.get` nur für die Modellliste
+- **Fremde Sitzung lesen:** kein Werkzeug des Modells liest Verlauf oder Projektion einer fremden Sitzung; der Kern-Dienst `observeSession`/`sessionQuery.observeSession(sessionId)`
+  (`dsh-api-session-controller/lib/index.js` Zeilen 804, 1589, 2959) nimmt beliebige IDs, nur `inspect` prüft den Arbeitsordner im Kopf (Zeile 160); ob ein Werkzeug ihn erreicht, ist ungemessen (`dsh-tool-subagent` nutzt `sessions.get` nur für die Modellliste
   des Elternteils). Im Browser liest `useSessions` Projektionen (`projectionsBySession[…].values.agentTeam`, `state.byId[…].running`); **ob er alle Sitzungen des
   Workspaces liefert oder nur geöffnete, ist ungemessen** (`dsh-client-ui-session/lib/types` nicht gelesen).
 - **Nicht gemessen:** ob ein Browser-Plugin diese Host-Dienste direkt erreicht oder ein eigener Host-Teil nötig ist (Vermutung: eigener Host-Teil nötig, so macht es das
