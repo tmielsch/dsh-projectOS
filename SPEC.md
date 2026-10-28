@@ -176,6 +176,53 @@ Entschieden:
    keine Konfigurationssprache. Der Kern ist klein und hat eine klare, schmale Schnittstelle für „Quelle“; eine neue Quelle ist
    ein Modul im Repo, das ein Agent in kurzer Zeit nachbauen kann. (Antwort auf D9.)
 
+### A9 — Begriffe, Firma, Kommunikationsregeln, CEO, 2026-10-28
+
+> „es muss halt sehr deskriptiv sein, dass es im Prinzip ohne eine Anleitung zu lesen direkt klar ist, wie auch das
+> gemeint ist, aber was auch gleichzeitig allgemein genug ist, […] um halt für alle Presets zu funktionieren."
+
+> „eine Arbeitsgruppe […] besteht aus einem Experten und dann den dedizierten Facharbeitern und generellen Arbeitern,
+> Hilfsarbeitern, Facharbeiter und Hilfsarbeiter, plus Experte bilden eine Arbeitsgruppe, und das ist quasi wie so ein
+> Senior mit seinen Juniors in einer Firma, und ja, dann gibt es halt noch die Abteilung, […] eine Abteilung besteht aus
+> Arbeitsgruppen, dass man ein bisschen von diesem Begriff Teams wegkommt, weil Team kann so vieles sein, und eine
+> Arbeitsgruppe ist halt eher was Spezifisches, was sich halt mit einer speziellen Sache direkt arbeitend
+> auseinandersetzt, während ein Team nicht unbedingt arbeiten muss, sondern ja auch design oder entwerfen kann"
+
+> „die Inspiration so ein bisschen ist auch hell at loose und dies, diese Commander-Chat oder der Squad-Chat, dass es
+> halt diese Hierarchie-Ebenen gibt, die Arbeitsgruppenleiter können mit anderen Arbeitsgruppenleitern sprechen, mit den
+> Leads, aber jede Arbeitsgruppe ist ansonsten für sich isoliert, beziehungsweise innerhalb untereinander, also die
+> Subagents, aber jeder Vorgesetzte kann quasi überall reinschauen und weiss, wie das gesamte Team und das gesamte
+> Department strukturiert ist."
+> (Lesart des Agenten: „hell at loose“ im Diktat = das Spiel *Hell Let Loose* mit seinem Commander- und Squad-Chat.)
+
+> „das muss auch alles gut in Englisch übersetzbar sein, ich habe jetzt hier mit deutschen Begriffen gesprochen, aber
+> vielleicht gibt es da irgendwas Griffigeres in Englisch."
+
+> „der Arbeitsordner ist das Projekt, […] der Workspace ist quasi die Firma. Und dann kann ich halt alle Sessions, die
+> quasi in diesem Workspace sind, die Teams sind, zählen dann als Department und diese Meta-Sessions, die quasi
+> Departmentsleiter, die Abteilungsleiter, die können mit anderen Abteilungsleitern reden. Im Prinzip ist das dasselbe
+> […] Prinzip, nur mit mehreren hierarchischen Ebenen"
+
+> „im Prinzip wäre es halt gut, wenn man auch sowas wie ein CEO haben könnte, dass man einfach sagt, hier, ich mache ein
+> neues Projekt, das ist jetzt mein Workspace, und ich mache hier jetzt ein CEO so, oder ja, und in dem CEO fängt dann
+> diese genestete Hierarchie an, so, dann brauche ich nicht unbedingt verschiedene Sessions und ich kann vom Ding her
+> sogar noch weiter das treiben und verschiedene CEOs für dasselbe Projekt haben, […] dass ich quasi ein ganzes
+> Firmenkonglomerat innerhalb eines Workspaces bauen kann, wenn ich denn unbedingt wollen würde"
+
+Entschieden:
+1. **Begriffe (deutsch):** *Firma* = Workspace (der Arbeitsordner ist das Projekt). *Abteilung* = eine Teamsitzung mit allem
+   darunter, geleitet vom *Abteilungsleiter*. *Arbeitsgruppe* = ein *Experte* (Gruppenleiter) mit seinen *Facharbeitern*
+   (dedizierte Rollen) und *Hilfsarbeitern* (allgemeine Arbeiter), „wie ein Senior mit seinen Juniors“. Eine Abteilung besteht aus
+   Arbeitsgruppen. „Team“ wird **nicht** mehr als Oberbegriff benutzt. Die Begriffe müssen **ohne Anleitung verständlich** und
+   **für alle Presets allgemein genug** sein. (Antwort auf D4, deutsche Seite.)
+2. **Zuordnung:** Alle Teamsitzungen im Workspace zählen als Abteilungen dieser Firma. (Antwort auf D5; Messung zu `cwd` in B2.)
+3. **Kommunikationsregeln (Vorbild Commander-/Squad-Chat):** Abteilungsleiter sprechen mit Abteilungsleitern; Gruppenleiter mit
+   Gruppenleitern und mit ihren Leads; innerhalb einer Arbeitsgruppe sprechen die Mitglieder frei miteinander; sonst ist jede
+   Arbeitsgruppe **isoliert**; **jeder Vorgesetzte darf überall hineinsehen** und kennt die Struktur seiner ganzen Abteilung.
+4. **CEO:** Wunsch, kein erster Schnitt. Eine oberste Sitzung („CEO“), in der die verschachtelte Hierarchie beginnt, sodass der
+   Mensch nicht mehrere Sitzungen von Hand anlegen muss; **mehrere CEOs je Workspace** („Firmenkonglomerat“) sollen möglich sein.
+5. **Die Texte müssen gut ins Englische übersetzbar sein;** griffige englische Wörter sind erwünscht (offen, D11).
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -311,6 +358,20 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 4. Profile lesen und anzeigen, dann bearbeiten.
 5. Aufgaben-Ansicht auf den gemeinsamen Aufgaben des Agent-Teams (Karte = `TeamTaskView`, mit Besitzer und `blockedBy`).
 
+### C7 — Begriffe deutsch und englisch (Vorschlag des Agenten, noch keine Entscheidung)
+| Ebene | Deutsch | Englisch, beschreibend (empfohlen) | Englisch, griffig (Alternative) |
+|---|---|---|---|
+| Workspace | Firma | Company | — |
+| oberste Sitzung (Wunsch) | CEO | CEO | — |
+| Teamsitzung | Abteilung | Department | — |
+| Leiter der Abteilung | Abteilungsleiter | Department Lead | Commander |
+| Experte mit Mitarbeitern | Arbeitsgruppe | Work Group | Squad |
+| Leiter der Gruppe | Experte / Gruppenleiter | Group Lead | Squad Lead |
+| dedizierte Rolle | Facharbeiter | Specialist | — |
+| allgemeiner Arbeiter | Hilfsarbeiter | Helper | — |
+Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erklärung, was gemeint ist, und tragen keinen Spielgeschmack;
+„Squad“ und „Commander“ sind kürzer, lesen sich aber nach Militär und sind für eine Firma weniger selbsterklärend.
+
 ---
 
 ## D. Offene Fragen (kurze Liste; die ersten zwei werden zuerst geklärt)
@@ -322,11 +383,9 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 3. **Quelle der Facharbeiter:** Vorschlag in B2 (Kindsitzungen über `parentSession` plus Mitgliederliste). Zu prüfen am echten
    Beispiel: ob der Browser die Kopfdaten **aller** Kindsitzungen eines Leads bekommt (Dienst `ctx.sessions`, Liste
    `session.list`) oder nur geöffnete. Messung steht aus.
-4. **Name der Ebene:** „Department" (Abteilung) für den Teamlead und „Gruppe" für den Experten — oder anderes Wort?
-5. **Mehrere Teams pro Projekt:** Jede Sitzung, die als Team beginnt, ist ein eigenes Team (B1). Soll die Manager-Ansicht
-   sie alle als Abteilungen eines Projekts zeigen? (Der Wunsch in A1 sagt ja; offen ist nur, woran „gehört zum Projekt"
-   erkannt wird: Arbeitsordner der Sitzung?)
-6. **Sprache der Oberfläche:** Deutsch und Englisch, oder zunächst nur Deutsch?
+4. ~~Name der Ebene~~ **deutsch entschieden am 2026-10-28, siehe A9 Punkt 1;** englische Wörter offen (D11).
+5. ~~Mehrere Teams pro Projekt~~ **entschieden am 2026-10-28, siehe A9 Punkt 2.**
+6. **Sprache der Oberfläche:** Die Texte müssen ins Englische übersetzbar sein (A9 Punkt 5). Offen: ob die erste Fassung nur Deutsch ausliefert.
 7. ~~Größe des ersten Schnitts~~ **entschieden am 2026-10-28, siehe A6 Punkt 4:** nur Arbeiter, Karte mit geclaimten Aufgaben.
 8. **Chat-Knopf in einer Sitzung ohne Team:** Soll er fehlen, deaktiviert sein oder zur Projektübersicht führen?
 9. ~~Wie hängt man weitere Plugins ein?~~ **entschieden am 2026-10-28, siehe A8: klein, kein System.** Ursprünglicher Vorschlag, bleibt als Richtschnur für die Schnittstelle: Vorschlag zur Diskussion: der Kern kennt nur den Begriff „Quelle“ (liefert Arbeiter,
@@ -334,3 +393,9 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
    sich beim Kern anmeldet. Die Form der Anmeldung folgt dem Muster, das DSH selbst benutzt (Slots, `ctx.slots.inject`).
 10. ~~Was ist „Automation-Tasks“?~~ **geklärt, siehe A8 Punkt 1.** Gemessen war: Gemessen im Profil: `dsh-schedule` (Host-weite Erinnerungen, Zeitplan) samt `dsh-client-ui-schedule`
     (Aufgaben-Seite) im Bundle `dsh-experimental-schedule-bundle`. Von Chrome-Jobs kommt dort nichts vor.
+11. **Englische Wörter:** Tabelle in C7 bestätigen oder ändern.
+12. **Kommunikation zwischen Sitzungen und CEO:** Messung läuft (Haiku-Helfer, 2026-10-28). Gemessen bisher (B1): genau **eine** Team-Ebene; ein
+    Teammitglied kann keine Teammitglieder starten (`TEAM_LEAD_REQUIRED`); Nachrichten laufen nur innerhalb **eines** Teams (Lead ↔ Mitglieder,
+    Eltern ↔ eigene Unteragenten). Abteilungsleiter ↔ Abteilungsleiter, Hineinsehen über Teamgrenzen und ein CEO, der Abteilungen startet, sind damit
+    **nicht** vorhanden und wären neue Schichten. Ob und wie sie mit DSH-eigenen Mitteln möglich sind, steht nach der Messung hier. Erste Fassung bleibt
+    nach A6 eine **lesende** Ansicht.
