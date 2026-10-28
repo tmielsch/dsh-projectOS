@@ -313,6 +313,25 @@ mittleren Bereich eingehängt (Slots des Shell-Layouts).
   register({name:'main', key:id, children:{…}, inject:()=>({controller})}, Panel))` für die Seite im mittleren
   Bereich. Das ist der Weg, den auch unser Plugin geht.
 
+**B6 — Nachrichten und Einsicht über Teamgrenzen (MESSUNG, Haiku-Helfer plus Nachlesen des Leads, 2026-10-28):**
+- **`send_message` endet an der Teamgrenze.** `resolveActiveMember` (`agent-team/lib/index.js` Zeilen 350–366) kennt nur `"lead"` (die Wurzel des
+  **eigenen** Teams) und aktive Mitglieder in `state.members` des **eigenen** Teams; sonst `TEAM_MEMBER_NOT_FOUND` oder `TEAM_MEMBER_RESTING`. Ein Abteilungsleiter
+  kann mit diesem Werkzeug keinen anderen Abteilungsleiter erreichen. `list_agents` zeigt ebenfalls nur das eigene Team.
+- **Der Kern kann trotzdem jede Sitzung ansprechen, nur nicht über dieses Werkzeug.** `dsh-schedule` legt eine fällige Erinnerung so in eine **beliebige**
+  Sitzung (`dsh-schedule/lib/index.js` Zeilen 1576–1597): `ctx.sessionController.resolveAgent(task.sessionId)` liefert den Agenten der Sitzung, dann
+  `agent.followup(createUserMessage({content, source: { kind: "schedule" }}))` und `ctx.sessions.flush(agent.session)`. Der Browser-Weg ist
+  `session.prompt` (`dsh-api-session-controller/lib/index.js` Zeile 863) mit beliebiger `sessionId`. Eine Nachricht von Abteilungsleiter zu Abteilungsleiter
+  braucht daher **eine neue, kleine Host-Schicht** (ein Werkzeug, das nach diesem Muster arbeitet), aber **keinen Umbau des Kerns**.
+- **Neue Wurzelsitzung (CEO startet Abteilungen):** `session.create` nimmt `workspaceId` **oder** `cwd`, optional `sessionId` und `agentPreset`; die Berechtigung kommt
+  danach über den Befehl `/permission <id>`, der Auftrag über `session.prompt` mit `mode: 'queue'` (Vorlage, nur die Dienstaufrufe gelesen: Task-Board
+  `host-runner.ts`). Eine so angelegte Sitzung ohne `parentSession` gilt als Lead (`tryMembership`, `agent-team/lib/index.js` Zeilen 391–445) und darf Teammitglieder starten
+  (aus dem Code gelesen, **nicht** im Lauf geprüft).
+- **Fremde Sitzung lesen:** kein Werkzeug des Modells liest Verlauf oder Projektion einer fremden Sitzung (`dsh-tool-subagent` nutzt `sessions.get` nur für die Modellliste
+  des Elternteils). Im Browser liest `useSessions` Projektionen (`projectionsBySession[…].values.agentTeam`, `state.byId[…].running`); **ob er alle Sitzungen des
+  Workspaces liefert oder nur geöffnete, ist ungemessen** (`dsh-client-ui-session/lib/types` nicht gelesen).
+- **Nicht gemessen:** ob ein Browser-Plugin diese Host-Dienste direkt erreicht oder ein eigener Host-Teil nötig ist (Vermutung: eigener Host-Teil nötig, so macht es das
+  Task-Board); ob ein Lauf tatsächlich funktioniert.
+
 **B5 — Profile heute.** Es gibt Agent-Presets, Permission-Presets und Modellauswahl als eigene Plugins
 (`dsh-client-ui-agent-preset`, `…-permission-presets`, `…-model-selection`, `…-settings-subagent`). Ein
 **Team-Profil** (Abteilung/Gruppe) gibt es nicht; `~/.dsh/team-profile/` existiert nicht.
@@ -394,8 +413,6 @@ Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erk
 10. ~~Was ist „Automation-Tasks“?~~ **geklärt, siehe A8 Punkt 1.** Gemessen war: Gemessen im Profil: `dsh-schedule` (Host-weite Erinnerungen, Zeitplan) samt `dsh-client-ui-schedule`
     (Aufgaben-Seite) im Bundle `dsh-experimental-schedule-bundle`. Von Chrome-Jobs kommt dort nichts vor.
 11. **Englische Wörter:** Tabelle in C7 bestätigen oder ändern.
-12. **Kommunikation zwischen Sitzungen und CEO:** Messung läuft (Haiku-Helfer, 2026-10-28). Gemessen bisher (B1): genau **eine** Team-Ebene; ein
-    Teammitglied kann keine Teammitglieder starten (`TEAM_LEAD_REQUIRED`); Nachrichten laufen nur innerhalb **eines** Teams (Lead ↔ Mitglieder,
-    Eltern ↔ eigene Unteragenten). Abteilungsleiter ↔ Abteilungsleiter, Hineinsehen über Teamgrenzen und ein CEO, der Abteilungen startet, sind damit
-    **nicht** vorhanden und wären neue Schichten. Ob und wie sie mit DSH-eigenen Mitteln möglich sind, steht nach der Messung hier. Erste Fassung bleibt
-    nach A6 eine **lesende** Ansicht.
+12. **Kommunikation zwischen Abteilungen und CEO:** Messung steht in B6. Zusammengefasst: innerhalb einer Abteilung geht alles schon (`send_message`);
+    zwischen Abteilungsleitern und für einen CEO braucht es eine neue, kleine Host-Schicht nach dem Muster von `dsh-schedule`, ohne Umbau des Kerns. Erste Fassung
+    bleibt nach A6 eine **lesende** Ansicht; die Schicht kommt danach, als zweites Stück. Offen: ob ein Browser-Plugin ohne eigenen Host-Teil auskommt.
