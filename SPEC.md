@@ -150,6 +150,18 @@ Entschieden:
    Einbindung unseres Plugins, mit vorherigem Speicherpunkt des Konfigurations-Repos, nicht vorher.
 6. Aufgaben-Ansicht als eigenes Kanban (Karte = Aufgabe) bleibt Möglichkeit für später, nicht erster Schnitt.
 
+### A7 — Elastisch und erweiterbar, 2026-10-28
+
+> „Es gibt auch Automation-Tasks, das ist ein separates Plugin für Chrome-Jobs und so, das können wir auch mit einbinden.
+> Das ist jetzt nicht nur das Agent-Teams-Plugin, aber wenn DSH dann noch weitere Sachen hinzubekommt... Vielleicht kann man
+> das auch so ein bisschen elastisch machen, dass man es einfach so macht, dass es leicht erweiterbar ist, dass wenn ich jetzt
+> irgendein Custom-Plugin finde, was super cool ist, dass ich das quasi mit einbauen kann, ohne alles rausreißen zu müssen."
+
+Entschieden: dsh-projectOS ist **kein Einzelwerkzeug für Agent-Teams**, sondern ein Rahmen, in den sich weitere Quellen
+einhängen lassen (zunächst Agent-Teams, danach das Aufgaben-/Zeitplan-Plugin von DSH, später beliebige Plugins), ohne dass der
+Kern umgebaut wird. Wie diese Einhängung aussieht, ist **offen** (D9). Welches Plugin der Mensch mit „Automation-Tasks / Chrome-Jobs“ meint,
+ist **offen** (D10): gemessen wurde nur das mit DSH gelieferte `dsh-schedule` (Erinnerungen, Cron, Aufgaben-Seite).
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -304,3 +316,8 @@ die Befehle von `/team`), später Infrastruktur für die Zusammenarbeit (Nachric
 6. **Sprache der Oberfläche:** Deutsch und Englisch, oder zunächst nur Deutsch?
 7. **Größe des ersten Schnitts:** Lesende Ansicht aus C6 Punkt 1 als erstes Release.
 8. **Chat-Knopf in einer Sitzung ohne Team:** Soll er fehlen, deaktiviert sein oder zur Projektübersicht führen?
+9. **Wie hängt man weitere Plugins ein?** Vorschlag zur Diskussion: der Kern kennt nur den Begriff „Quelle“ (liefert Arbeiter,
+   Aufgaben oder Zustände in einer festen kleinen Form); Agent-Teams ist die erste Quelle; eine neue Quelle ist ein kleines Modul, das
+   sich beim Kern anmeldet. Die Form der Anmeldung folgt dem Muster, das DSH selbst benutzt (Slots, `ctx.slots.inject`).
+10. **Was ist „Automation-Tasks“?** Gemessen im Profil: `dsh-schedule` (Host-weite Erinnerungen, Zeitplan) samt `dsh-client-ui-schedule`
+    (Aufgaben-Seite) im Bundle `dsh-experimental-schedule-bundle`. Von Chrome-Jobs kommt dort nichts vor.
