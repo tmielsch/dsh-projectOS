@@ -1,7 +1,17 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   LANES,
+  agoOf,
+  applyNames,
+  baselineOf,
   buildWorkspaces,
+  departmentActivity,
+  diffTicker,
+  feedOf,
+  trimTicker,
+  type Baseline,
+  type FeedLine,
+  type TickerEvent,
   childCards,
   claimedTasks,
   inLane,
@@ -53,6 +63,49 @@ function cardSubtitle(card: WorkerCard, t: T): string {
   return card.children > 0 ? `${kind} · ${t('childrenCount', { count: card.children, working: card.childrenWorking })}` : kind
 }
 
+const NAMES_KEY = 'project-os.names'
+
+function loadNames(): Record<string, string> {
+  try {
+    const raw = typeof localStorage === 'undefined' ? null : localStorage.getItem(NAMES_KEY)
+    const parsed = raw === null ? {} : JSON.parse(raw)
+    return parsed !== null && typeof parsed === 'object' ? parsed as Record<string, string> : {}
+  } catch { return {} }
+}
+
+function saveNames(names: Record<string, string>): void {
+  try { if (typeof localStorage !== 'undefined') localStorage.setItem(NAMES_KEY, JSON.stringify(names)) } catch { /* private mode */ }
+}
+
+function ago(at: number, now: number, t: T): string {
+  const { unit, n } = agoOf(at, now)
+  return t(`ago.${unit}` as Key, { n })
+}
+
+function feedText(line: FeedLine, t: T): string {
+  if (line.kind === 'thought' || line.kind === 'said') return `${line.who}: ${line.text}`
+  if (line.kind === 'tool') return `${line.who} · ${line.text}`
+  const e = line.event!
+  return t(`tick.${e.kind}` as Key, {
+    who: e.who, subject: e.subject ?? '', note: e.note ?? '', error: e.error ?? '',
+    status: e.status === undefined ? '' : t(`status.${e.status === 'deleted' ? 'completed' : e.status}` as Key),
+  })
+}
+
+function Feed({ lines, now, t }: { lines: FeedLine[]; now: number; t: T }): ReactNode {
+  if (lines.length === 0) return <p className="pos-empty">{t('dept.quiet')}</p>
+  return (
+    <ul className="pos-feed" data-pos-feed="">
+      {lines.map((line) => (
+        <li key={line.id} data-kind={line.kind}>
+          <span className="pos-feedtime">{ago(line.at, now, t)}</span>
+          <span className="pos-feedtext">{feedText(line, t)}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 function Detail({ department, card, t, openSession, onClose }: {
   department: Department
   card: WorkerCard
@@ -70,6 +123,8 @@ function Detail({ department, card, t, openSession, onClose }: {
         <dd>{t(`lane.${card.lane}` as Key)}</dd>
         {card.model !== undefined && (<><dt>{t('model')}</dt><dd>{card.model}</dd></>)}
         {card.mode !== undefined && (<><dt>{t('mode')}</dt><dd>{t(`mode.${card.mode}` as Key)}</dd></>)}
+        {card.thought !== undefined && (<><dt>{t('thoughtNow')}</dt><dd>{card.thought}</dd></>)}
+        {card.tool !== undefined && (<><dt>{t('toolLast')}</dt><dd>{card.tool}</dd></>)}
         {card.updatedAt !== undefined && (<><dt>{t('lastActive')}</dt><dd>{new Date(card.updatedAt).toLocaleString()}</dd></>)}
         {card.kind === 'group-lead' && (<><dt>{t('noteNow')}</dt><dd>{card.note ?? <span className="pos-empty">{t('noteNone')}</span>}</dd></>)}
         {card.error !== undefined && (<><dt className="pos-err">{t('error')}</dt><dd className="pos-err">{card.error}</dd></>)}
@@ -104,11 +159,37 @@ function Detail({ department, card, t, openSession, onClose }: {
 /** The manager page: department tabs, a path, and the board of ONE hierarchy level. */
 export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerPageProps): ReactNode {
   const list = useSessions((state) => state)
-  const workspaces = useMemo(() => buildWorkspaces(list), [list])
+  const [names, setNames] = useState<Record<string, string>>(loadNames)
+  const [renaming, setRenaming] = useState<string | undefined>(undefined)
+  const [now, setNow] = useState(() => Date.now())
+  const [events, setEvents] = useState<TickerEvent[]>([])
+  const baselines = useRef<Record<string, Baseline>>({})
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>(undefined)
+
+  const workspaces = useMemo(() => applyNames(buildWorkspaces(list), names), [list, names])
+  const workspace = workspaces.find((w) => w.cwd === selectedWorkspace) ?? workspaces[0]
   const departments = useMemo(
-    () => workspaces.flatMap((w) => w.departments.map((d) => ({ workspace: w.name, department: d }))),
-    [workspaces],
+    () => (workspace?.departments ?? []).map((d) => ({ workspace: workspace?.name ?? '', department: d })),
+    [workspace],
   )
+  const allDepartments = useMemo(() => workspaces.flatMap((w) => w.departments), [workspaces])
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 15000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Live ticker: remember what every department looked like and turn each change into a line.
+  useEffect(() => {
+    const at = Date.now()
+    const fresh: TickerEvent[] = []
+    for (const department of allDepartments) {
+      const next = baselineOf(list, department)
+      fresh.push(...diffTicker(baselines.current[department.leadId], next, department.leadId, at, fresh.length))
+      baselines.current[department.leadId] = next
+    }
+    if (fresh.length > 0) setEvents((previous) => trimTicker([...previous, ...fresh], 120))
+  }, [list, allDepartments])
 
   const [selectedLead, setSelectedLead] = useState<string | undefined>(undefined)
   /** Path below the department lead: the last entry is the card whose board is shown. */
@@ -119,11 +200,14 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
 
   useEffect(() => {
     const wanted = focusLead?.()
-    if (wanted !== undefined && departments.some((d) => d.department.leadId === wanted)) {
+    if (wanted === undefined) return
+    const owner = workspaces.find((w) => w.departments.some((d) => d.leadId === wanted))
+    if (owner !== undefined) {
+      setSelectedWorkspace(owner.cwd)
       setSelectedLead(wanted)
       setPath([])
     }
-  }, [focusLead, departments])
+  }, [focusLead, workspaces])
 
   const current = departments.find((d) => d.department.leadId === selectedLead) ?? departments[0]
   const department = current?.department
@@ -160,24 +244,78 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
         <p>{t('subtitle')}</p>
       </header>
 
-      {list.phase === 'pending' && departments.length === 0 && <p className="pos-note">{t('loading')}</p>}
-      {list.phase !== 'pending' && departments.length === 0 && <p className="pos-note">{t('empty')}</p>}
+      {list.phase === 'pending' && workspaces.length === 0 && <p className="pos-note">{t('loading')}</p>}
+      {list.phase !== 'pending' && workspaces.length === 0 && <p className="pos-note">{t('empty')}</p>}
 
-      {departments.length > 0 && (
-        <div className="pos-tabs" role="tablist" aria-label={t('department')}>
-          {departments.map(({ workspace, department: d }) => (
+      {workspaces.length > 0 && (
+        <div className="pos-workspaces" role="tablist" aria-label={t('workspacePick')}>
+          <span className="pos-label">{t('workspacePick')}</span>
+          {workspaces.map((w) => (
             <button
               type="button"
               role="tab"
-              key={d.leadId}
-              className="pos-tab"
-              aria-pressed={d.leadId === department?.leadId}
-              onClick={() => { setSelectedLead(d.leadId); setPath([]); setDetailId(undefined) }}
+              key={w.cwd}
+              className="pos-ws"
+              aria-pressed={w.cwd === workspace?.cwd}
+              onClick={() => { setSelectedWorkspace(w.cwd); setSelectedLead(undefined); setPath([]); setDetailId(undefined) }}
             >
-              {d.title}
-              <small>{t('workspace')}: {workspace === '' ? '–' : workspace}</small>
+              {w.name === '' ? '–' : w.name}
+              <span className="pos-count">{w.departments.length}</span>
             </button>
           ))}
+          <span className="pos-hint pos-onlyteams">{t('onlyTeams')}</span>
+        </div>
+      )}
+
+      {departments.length > 0 && (
+        <div className="pos-depts" data-pos-depts="">
+          {departments.map(({ department: d }) => {
+            const act = departmentActivity(list, d)
+            const feed = feedOf(list, d, events.filter((e) => e.kind !== 'seed'), now, { limit: act.active ? 3 : 1 })
+            const isRenaming = renaming === d.leadId
+            return (
+              <div
+                className="pos-dept"
+                key={d.leadId}
+                data-active={act.active}
+                aria-current={d.leadId === department?.leadId}
+              >
+                <div className="pos-depthead">
+                  <span className="pos-dot" data-lane={act.active ? 'working' : 'done'} />
+                  {isRenaming ? (
+                    <input
+                      className="pos-nameinput"
+                      autoFocus
+                      defaultValue={d.title}
+                      aria-label={t('dept.renameHint')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') setRenaming(undefined)
+                        if (e.key === 'Enter') {
+                          const next = { ...names }
+                          const value = (e.target as HTMLInputElement).value.trim()
+                          if (value === '') delete next[d.leadId]; else next[d.leadId] = value
+                          setNames(next); saveNames(next); setRenaming(undefined)
+                        }
+                      }}
+                      onBlur={() => setRenaming(undefined)}
+                    />
+                  ) : (
+                    <button type="button" className="pos-deptname" onClick={() => { setSelectedLead(d.leadId); setPath([]); setDetailId(undefined) }}>
+                      {d.title}
+                    </button>
+                  )}
+                  <button type="button" className="pos-mini pos-pencil" title={t('dept.rename')} aria-label={t('dept.rename')} onClick={() => setRenaming(d.leadId)}>✎</button>
+                  <span className="pos-badge" data-active={act.active}>{t(act.active ? 'dept.active' : 'dept.inactive')}</span>
+                </div>
+                <small className="pos-deptmeta">
+                  {t('dept.groups', { n: d.members.length })}
+                  {act.working > 0 ? ` · ${t('dept.working', { n: act.working })}` : ''}
+                  {act.lastActiveAt > 0 ? ` · ${t('dept.last', { when: ago(act.lastActiveAt, now, t) })}` : ''}
+                </small>
+                <Feed lines={feed} now={now} t={t} />
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -209,6 +347,11 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
             </button>
             <span className="pos-hint">{t('levelHint')}</span>
           </nav>
+
+          <section className="pos-live" data-pos-live="">
+            <h2><span className="pos-dot" data-lane={stats.working > 0 ? 'working' : 'done'} />{t('live')}</h2>
+            <Feed lines={feedOf(list, department, events.filter((e) => e.kind !== 'seed'), now, { limit: 10 })} now={now} t={t} />
+          </section>
 
           <div className="pos-body">
             <div className="pos-board" data-pos-board="">
@@ -248,6 +391,7 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
                               <small>{cardSubtitle(card, t)}</small>
                               {card.model !== undefined && <small>{card.model}</small>}
                               {card.note !== undefined && <em className="pos-note-line">{card.note}</em>}
+                              {card.thought !== undefined && card.lane === 'working' && <em className="pos-thought">{card.thought}</em>}
                             </button>
                             <div className="pos-cardtools">
                               {card.children > 0 && (

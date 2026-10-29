@@ -77,6 +77,9 @@ export interface WorkerCard {
   createdAt?: number
   /** Last activity of the session (ms), from the session list row. */
   updatedAt?: number
+  /** Last thought line, answer line and tool of this session (host projection `projectOsActivity`). */
+  thought?: string
+  tool?: string
   /** Live note: the `Stand:` line of the task this group lead has in progress (SPEC A13 point 2). */
   note?: string
   /** Number of direct children, and how many of them are working right now. */
@@ -258,6 +261,12 @@ function cardOf(list: ListState, department: Department, id: string, kind: Worke
   if (info?.mode !== undefined) card.mode = info.mode
   if (info?.createdAt !== undefined) card.createdAt = info.createdAt
   if (row?.updatedAt !== undefined && row.updatedAt > 0) card.updatedAt = row.updatedAt
+  const activity = activityOf(list, id)
+  if (activity !== undefined) {
+    const line = activity.thought !== '' ? activity.thought : activity.said
+    if (line !== '') card.thought = line
+    if (activity.tool !== '') card.tool = activity.tool
+  }
   if (member !== undefined) {
     const note = liveNoteOf(department, card.name)
     if (note !== undefined) card.note = note
@@ -360,4 +369,220 @@ export function summary(list: ListState, department: Department): {
     tasksRunning: department.tasks.filter((t) => t.status === 'in_progress').length,
     tasksDone: department.tasks.filter((t) => t.status === 'completed').length,
   }
+}
+
+
+// ───────────────────────── Dashboard: activity and live ticker (SPEC A15) ─────────────────────────
+
+/** Ids of the department lead and everything below it (depth guard against cycles). */
+export function departmentSessionIds(list: ListState, department: Department): string[] {
+  const index = catalogIndex(list)
+  const out: string[] = []
+  const seen = new Set<string>()
+  const walk = (id: string, depth: number): void => {
+    if (depth > 6 || seen.has(id)) return
+    seen.add(id)
+    out.push(id)
+    for (const child of childIdsOf(list, id, index)) walk(child, depth + 1)
+  }
+  walk(department.leadId, 0)
+  for (const member of department.members) walk(member.id, 1)
+  return out
+}
+
+export interface DepartmentActivity {
+  /** True when the lead or anything below it is running right now. */
+  active: boolean
+  /** Number of sessions below the lead that are running. */
+  working: number
+  /** Newest `updatedAt` (ms) among the lead and everything below; 0 when unknown. */
+  lastActiveAt: number
+}
+
+export function departmentActivity(list: ListState, department: Department): DepartmentActivity {
+  const ids = departmentSessionIds(list, department)
+  let working = 0
+  let lastActiveAt = 0
+  for (const id of ids) {
+    const row = list.byId[id]
+    if (row === undefined) continue
+    if (row.running === true && id !== department.leadId) working += 1
+    if (typeof row.updatedAt === 'number' && row.updatedAt > lastActiveAt) lastActiveAt = row.updatedAt
+  }
+  const leadRunning = list.byId[department.leadId]?.running === true
+  return { active: leadRunning || working > 0, working, lastActiveAt }
+}
+
+/** What one department looked like at one moment; two of these make the ticker. */
+export interface Baseline {
+  names: Record<string, string>
+  running: Record<string, boolean>
+  failed: Record<string, string>
+  tasks: Record<string, { subject: string; status: TeamTask['status']; note?: string; owner?: string }>
+}
+
+export type TickerKind = 'seed' | 'started' | 'finished' | 'failed' | 'task-new' | 'task-status' | 'task-note'
+
+export interface TickerEvent {
+  id: string
+  at: number
+  leadId: string
+  kind: TickerKind
+  /** Name of the agent the line is about (may be empty for task lines without an owner). */
+  who: string
+  subject?: string
+  status?: TeamTask['status']
+  note?: string
+  error?: string
+}
+
+export function baselineOf(list: ListState, department: Department): Baseline {
+  const index = catalogIndex(list)
+  const names: Record<string, string> = {}
+  const running: Record<string, boolean> = {}
+  const failed: Record<string, string> = {}
+  for (const id of departmentSessionIds(list, department)) {
+    if (id === department.leadId) continue
+    names[id] = nameOf(list, department, id, index)
+    running[id] = list.byId[id]?.running === true
+  }
+  for (const member of department.members) {
+    if (member.error !== undefined) failed[member.id] = member.error
+    else if (member.phase === 'failed') failed[member.id] = ''
+  }
+  const tasks: Baseline['tasks'] = {}
+  for (const task of department.tasks) {
+    const entry: Baseline['tasks'][string] = { subject: task.subject, status: task.status }
+    const note = liveNote(task)
+    if (note !== undefined) entry.note = note
+    if (task.ownerName !== undefined) entry.owner = task.ownerName
+    tasks[task.id] = entry
+  }
+  return { names, running, failed, tasks }
+}
+
+/**
+ * New ticker lines between two baselines. Without a previous baseline the lines describe
+ * what is going on right now (kind `seed`), so the ticker is never empty on first sight.
+ */
+export function diffTicker(prev: Baseline | undefined, next: Baseline, leadId: string, at: number, startId = 0): TickerEvent[] {
+  const out: TickerEvent[] = []
+  let n = startId
+  const push = (event: Omit<TickerEvent, 'id' | 'at' | 'leadId'>): void => {
+    out.push({ id: `${leadId}:${at}:${n++}`, at, leadId, ...event })
+  }
+  if (prev === undefined) {
+    for (const [id, isRunning] of Object.entries(next.running)) if (isRunning) push({ kind: 'seed', who: next.names[id] ?? id })
+    for (const task of Object.values(next.tasks)) {
+      if (task.status === 'in_progress' && task.note !== undefined) push({ kind: 'task-note', who: task.owner ?? '', subject: task.subject, note: task.note })
+    }
+    return out
+  }
+  for (const [id, isRunning] of Object.entries(next.running)) {
+    const before = prev.running[id]
+    const who = next.names[id] ?? id
+    if (before === undefined) { if (isRunning) push({ kind: 'started', who }) }
+    else if (before !== isRunning) push({ kind: isRunning ? 'started' : 'finished', who })
+  }
+  for (const [id, error] of Object.entries(next.failed)) {
+    if (prev.failed[id] === undefined) push({ kind: 'failed', who: next.names[id] ?? id, error })
+  }
+  for (const [id, task] of Object.entries(next.tasks)) {
+    const before = prev.tasks[id]
+    if (before === undefined) {
+      push({ kind: 'task-new', who: task.owner ?? '', subject: task.subject })
+      if (task.note !== undefined) push({ kind: 'task-note', who: task.owner ?? '', subject: task.subject, note: task.note })
+      continue
+    }
+    if (before.status !== task.status) push({ kind: 'task-status', who: task.owner ?? '', subject: task.subject, status: task.status })
+    if (before.note !== task.note && task.note !== undefined) push({ kind: 'task-note', who: task.owner ?? '', subject: task.subject, note: task.note })
+  }
+  return out
+}
+
+/** Keep the newest `limit` lines. */
+export function trimTicker(events: TickerEvent[], limit = 60): TickerEvent[] {
+  return events.length <= limit ? events : events.slice(events.length - limit)
+}
+
+/** Seconds, minutes, hours or days since `at` as a pair a translation can use. */
+export function agoOf(at: number, now: number): { unit: 'now' | 'min' | 'hour' | 'day'; n: number } {
+  const seconds = Math.max(0, Math.round((now - at) / 1000))
+  if (seconds < 45) return { unit: 'now', n: 0 }
+  if (seconds < 3600) return { unit: 'min', n: Math.max(1, Math.round(seconds / 60)) }
+  if (seconds < 86400) return { unit: 'hour', n: Math.round(seconds / 3600) }
+  return { unit: 'day', n: Math.round(seconds / 86400) }
+}
+
+
+// ───────────────────────── Host projection `projectOsActivity` ─────────────────────────
+
+export interface Activity { thought: string; said: string; tool: string; at: number }
+
+/** The host projection of one session, or undefined while the host half is not loaded. */
+export function activityOf(list: ListState, id: string): Activity | undefined {
+  const value = list.projectionsBySession?.[id]?.values?.projectOsActivity ?? list.byId[id]?.projectionValues?.projectOsActivity
+  if (value === undefined || value === null || typeof value !== 'object') return undefined
+  const v = value as Partial<Activity>
+  return {
+    thought: typeof v.thought === 'string' ? v.thought : '',
+    said: typeof v.said === 'string' ? v.said : '',
+    tool: typeof v.tool === 'string' ? v.tool : '',
+    at: typeof v.at === 'number' ? v.at : 0,
+  }
+}
+
+export interface FeedLine {
+  id: string
+  at: number
+  who: string
+  /** `thought` and `said` come from the projection, `event` lines from the diff. */
+  kind: 'thought' | 'said' | 'tool' | 'event'
+  text: string
+  event?: TickerEvent
+}
+
+/**
+ * The live feed of one department: the newest thought lines of the sessions below it that are
+ * running (or were active within `recentMs`), merged with the state changes seen since the page was
+ * opened, newest first.
+ */
+export function feedOf(
+  list: ListState,
+  department: Department,
+  events: TickerEvent[],
+  now: number,
+  options: { limit?: number; recentMs?: number } = {},
+): FeedLine[] {
+  const limit = options.limit ?? 12
+  const recentMs = options.recentMs ?? 10 * 60 * 1000
+  const index = catalogIndex(list)
+  const lines: FeedLine[] = []
+  for (const id of departmentSessionIds(list, department)) {
+    const activity = activityOf(list, id)
+    if (activity === undefined || activity.at === 0) continue
+    const running = list.byId[id]?.running === true
+    if (!running && now - activity.at > recentMs) continue
+    const who = id === department.leadId ? department.title : nameOf(list, department, id, index)
+    if (activity.thought !== '') lines.push({ id: `${id}:thought`, at: activity.at, who, kind: 'thought', text: activity.thought })
+    else if (activity.said !== '') lines.push({ id: `${id}:said`, at: activity.at, who, kind: 'said', text: activity.said })
+    else if (activity.tool !== '') lines.push({ id: `${id}:tool`, at: activity.at, who, kind: 'tool', text: activity.tool })
+  }
+  for (const event of events) {
+    if (event.leadId !== department.leadId) continue
+    lines.push({ id: event.id, at: event.at, who: event.who, kind: 'event', text: '', event })
+  }
+  lines.sort((a, b) => b.at - a.at)
+  return lines.slice(0, limit)
+}
+
+/** Names the user gave to departments, kept in this browser (SPEC D21, first cut). */
+export function applyNames(workspaces: WorkspaceGroup[], names: Record<string, string>): WorkspaceGroup[] {
+  return workspaces.map((w) => ({
+    ...w,
+    departments: w.departments.map((d) => {
+      const custom = names[d.leadId]?.trim()
+      return custom === undefined || custom === '' ? d : { ...d, title: custom }
+    }),
+  }))
 }
