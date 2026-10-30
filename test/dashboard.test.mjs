@@ -97,14 +97,25 @@ test('host fold: last line of reasoning and text, last tool, same reference when
 })
 
 import { apply, inject, name } from '../src/host/index.js'
-test('host apply: registers once, survives a throwing register, exports name and inject', () => {
+test('host apply: registers once, survives a throwing register, exports name and inject', async () => {
   assert.equal(name, 'project-os')
-  assert.deepEqual(inject, ['sessionProjections'])
+  assert.deepEqual(inject, ['sessionProjections', 'storageDomain', 'systemPrompt', 'agents', 'workspaceRegistry'])
+
+  // no storage service: the projection is registered, the policy engine logs off and stops
   const seen = []
-  apply({ sessionProjections: { register: (d) => { seen.push(d.key); return () => {} } } })
-  assert.deepEqual(seen, ['projectOsActivity'])
   const warned = []
-  apply({ sessionProjections: { register() { throw new Error('boom') } }, logger: () => ({ warn: (m) => warned.push(m) }) })
-  assert.equal(warned.length, 1)
-  assert.match(warned[0], /boom/)
+  await apply({
+    sessionProjections: { register: (d) => { seen.push(d.key); return () => {} } },
+    logger: () => ({ warn: (m) => warned.push(m) }),
+  })
+  assert.deepEqual(seen, ['projectOsActivity'])
+  assert.ok(warned.some((w) => w.includes('no storage domain service')))
+
+  const warned2 = []
+  await apply({
+    sessionProjections: { register() { throw new Error('boom') } },
+    logger: () => ({ warn: (m) => warned2.push(m) }),
+  })
+  assert.ok(warned2.some((w) => w.includes('boom')))
+  assert.equal(warned2.filter((w) => w.includes('boom')).length, 1)
 })

@@ -93,4 +93,26 @@ export const CSS = `
 .pos-task small{display:block;color:var(--dsw-alias-label-tertiary,#999);font-size:11px;margin-top:2px}
 .pos-err{color:var(--dsw-alias-state-error-primary,#e66)}
 @container (width<=640px){.pos-body{flex-direction:column}.pos-detail{width:auto}}
+
+/* The policy editor: cards with a switch, a title, and the prompt body. */
+.pos-policies,.pos-policytab{display:flex;flex-direction:column;gap:8px;padding:0 24px 18px}
+.pos-policy{display:flex;flex-direction:column;gap:6px;border-radius:10px;padding:10px 12px;background:var(--dsw-alias-bg-layer-2,#2a2a2a);box-shadow:inset 0 0 0 .5px var(--dsw-alias-border-l2,#444)}
+.pos-policy[data-on=true]{box-shadow:inset 0 0 0 1px var(--dsw-alias-state-success-primary,#4c8)}
+.pos-policyhead{display:flex;align-items:center;gap:8px;min-width:0}
+.pos-switch{cursor:pointer;flex:none;width:34px;height:20px;border:0;border-radius:999px;padding:0;background:var(--dsw-alias-bg-base,#222);box-shadow:inset 0 0 0 1px var(--dsw-alias-border-l3,#666)}
+.pos-switch[aria-checked=true]{background:var(--dsw-alias-state-success-primary,#4c8)}
+.pos-knob{display:block;width:14px;height:14px;margin:3px;border-radius:50%;background:var(--dsw-alias-label-primary,#fff);transition:transform .12s}
+.pos-switch[aria-checked=true] .pos-knob{transform:translateX(14px)}
+.pos-policytitle{flex:1;min-width:0;border:0;border-radius:6px;background:transparent;color:var(--dsw-alias-label-primary,#fff);font-size:13px;font-weight:600;padding:2px 4px}
+.pos-policytitle:focus{background:var(--dsw-alias-bg-base,#222)}
+.pos-policybody{width:100%;border-radius:8px;border:1px solid var(--dsw-alias-border-l3,#666);background:var(--dsw-alias-bg-base,#222);color:var(--dsw-alias-label-secondary,#bbb);font-size:12px;line-height:1.4;padding:6px 8px;font-family:inherit;resize:vertical}
+.pos-policyfoot{display:flex;align-items:center;gap:8px;min-width:0}
+.pos-add{align-self:flex-start}
+
+/* The floating policy window, opened by a right-click on a workspace row. */
+.pos-window{position:fixed;z-index:60;display:flex;flex-direction:column;border-radius:12px;background:var(--dsw-alias-bg-layer-3,#333);box-shadow:inset 0 0 0 1px var(--dsw-alias-border-l3,#666),0 8px 24px rgba(0,0,0,.4);max-height:min(70vh,520px);pointer-events:auto}
+.pos-windowhead{cursor:grab;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--dsw-alias-bg-layer-2,#2a2a2a);border-radius:12px 12px 0 0;user-select:none}
+.pos-windowhead:active{cursor:grabbing}
+.pos-windowtitle{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,#fff);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pos-windowbody{display:flex;flex-direction:column;gap:8px;padding:10px;overflow:auto;min-height:0}
 `

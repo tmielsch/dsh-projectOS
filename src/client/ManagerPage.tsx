@@ -30,10 +30,14 @@ type T = (key: Key, params?: Record<string, unknown>) => string
 
 export interface ManagerPageProps {
   useSessions: <R>(selector: (state: ListState) => R) => R
+  /** Workspace snapshot, a standard prop of the `main` slot (measured in its catalog). */
+  useWorkspaces?: <R>(selector: (state: { items: { workspaceId: string; path: string; title: string }[] }) => R) => R
   t: T
   openSession: (sessionId: string) => void
   /** Department the page should show first (set by the chat button). */
   focusLead?: () => string | undefined
+  /** The Policy-Manager tab, built by the entry (the entry owns the remote face). */
+  renderPolicies?: (useWorkspaces: NonNullable<ManagerPageProps['useWorkspaces']>) => ReactNode
 }
 
 /** Icon of the sidebar row: one box over three boxes, a hierarchy. */
@@ -157,7 +161,7 @@ function Detail({ department, card, t, openSession, onClose }: {
 }
 
 /** The manager page: department tabs, a path, and the board of ONE hierarchy level. */
-export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerPageProps): ReactNode {
+export function ManagerPage({ useSessions, useWorkspaces, t, openSession, focusLead, renderPolicies }: ManagerPageProps): ReactNode {
   const list = useSessions((state) => state)
   const [names, setNames] = useState<Record<string, string>>(loadNames)
   const [renaming, setRenaming] = useState<string | undefined>(undefined)
@@ -165,6 +169,8 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
   const [events, setEvents] = useState<TickerEvent[]>([])
   const baselines = useRef<Record<string, Baseline>>({})
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>(undefined)
+  /** The tab strip of the page: the kanban board and the policy editor (Anordnung 2026-10-30). */
+  const [tab, setTab] = useState<'board' | 'policies'>('board')
 
   const workspaces = useMemo(() => applyNames(buildWorkspaces(list), names), [list, names])
   const workspace = workspaces.find((w) => w.cwd === selectedWorkspace) ?? workspaces[0]
@@ -244,6 +250,18 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
         <p>{t('subtitle')}</p>
       </header>
 
+      <nav className="pos-tabs" role="tablist" aria-label={t('tabs')}>
+        <button type="button" role="tab" className="pos-tab" aria-pressed={tab === 'board'} onClick={() => setTab('board')}>{t('tabBoard')}</button>
+        {renderPolicies !== undefined && useWorkspaces !== undefined && (
+          <button type="button" role="tab" className="pos-tab" aria-pressed={tab === 'policies'} onClick={() => setTab('policies')}>{t('tabPolicies')}</button>
+        )}
+      </nav>
+
+      {tab === 'policies' && useWorkspaces !== undefined && renderPolicies !== undefined && (
+        <div className="pos-policytab">{renderPolicies(useWorkspaces)}</div>
+      )}
+
+      {tab === 'board' && (<>
       {list.phase === 'pending' && workspaces.length === 0 && <p className="pos-note">{t('loading')}</p>}
       {list.phase !== 'pending' && workspaces.length === 0 && <p className="pos-note">{t('empty')}</p>}
 
@@ -442,6 +460,7 @@ export function ManagerPage({ useSessions, t, openSession, focusLead }: ManagerP
           </div>
         </>
       )}
+      </>)}
     </div>
   )
 }
