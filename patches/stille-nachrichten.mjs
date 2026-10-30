@@ -154,6 +154,22 @@ export function erweitereDefinition(definition, umgebung) {
 		}
 		const sender = exec?.agent;
 		if (sender === undefined) throw new Error(`${WERKZEUG} braucht einen aufrufenden Agenten.`);
+
+		// Der Weg zu einer eigenen Kind-Sitzung (`agent_id`, vom delegate-send-Patch):
+		// der Vermerk kommt vor den Text, die Grund-execute macht die Zustellung.
+		const kind = args?.agent_id;
+		if (kind !== undefined && kind !== null && String(kind).length > 0) {
+			let kindName = "";
+			try {
+				const sessions = umgebung.sessions?.();
+				kindName = sessions?.get?.(String(kind))?.displayTitle ?? String(kind);
+			} catch { /* Der Name ist Schmuck am Vermerk, nie Bedingung. */ }
+			return {
+				...(await grundExecute.call(this, { ...args, message: empfaengerVermerk(kindName) + "\n\n" + nachricht }, exec)),
+				note: absenderHinweis(String(kind)),
+			};
+		}
+
 		let senderName = "";
 		try {
 			const teams = umgebung.teams();
@@ -471,6 +487,28 @@ if (alsHauptmodul) {
 		try { await definition.execute({ target: "x", quiet: true }, { agent: { id: "s" } }); } catch { abgelehnt = true; }
 		pruefe(abgelehnt, true, "quiet ohne message wird abgelehnt");
 		pruefe(angekommen, 0, "und erreicht den Dienst nicht");
+	}
+
+	// --- 5. quiet auf dem agent_id-Weg: Vermerk vor dem Text, Zustellung durch die Grund-execute ---
+	{
+		const { definition } = nachbau()
+		definition.parameters.properties.agent_id = { type: "string" }
+		const aufrufe = []
+		definition.execute = async function (args, exec) { aufrufe.push(args); return { ok: true } }
+		const umgebung = {
+			protokoll: () => {},
+			teams: () => ({ sendMessage: async () => ({}) }),
+			sessions: () => ({ get: (id) => id === "kind1" ? { displayTitle: "Der Experte" } : undefined }),
+		}
+		erweitereDefinition(definition, umgebung)
+		const ergebnis = await definition.execute({ agent_id: "kind1", message: "Nur unter uns.", quiet: true }, { agent: { id: "s" } })
+		pruefe(aufrufe.length, 1, "die Grund-execute stellt die Kind-Nachricht zu")
+		const text = aufrufe[0].message
+		pruefe(text.includes("nur fuer dich"), true, "der Vermerk steht vor dem Text")
+		pruefe(text.endsWith("Nur unter uns."), true, "der Nachrichttext bleibt der letzte Teil")
+		pruefe(text.includes("Der Experte"), true, "der Kind-Name steht im Vermerk")
+		pruefe(aufrufe[0].agent_id, "kind1", "agent_id bleibt erhalten")
+		pruefe(ergebnis.note.includes("kind1"), true, "der Absender bekommt den Hinweis auf die Kind-Sitzung")
 	}
 
 	setTimeout(() => {
