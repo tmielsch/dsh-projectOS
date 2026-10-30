@@ -17,7 +17,7 @@ vor, was ihnen widerspricht.
 
 ## 1. Gemessener Ist-Stand
 
-- **Heute gibt es kein Kontext-Menü.** entry.tsx Zeilen 124–139 hören auf `contextmenu` im
+- **Heute gibt es kein Kontext-Menü.** entry.tsx Zeilen 134–148 hören auf `contextmenu` im
   Dokument und öffnen das Fenster direkt, wenn die getroffene Zeile `data-row-key` mit
   `workspace:` beginnt. Ein Menü wird nicht gezeichnet.
 - **Die Zeilen der Seitenleiste tragen die Kennung:** Workspace-Zeile
@@ -90,7 +90,7 @@ Ablauf je Rechtsklick:
    `workspace` die Zeile „Set Policies“ (öffnet das Policy-Fenster an dieser Stelle) und für
    `session` später „In die Abteilung“; die Workspace-Registry liefert Titel und Pfad; die
    Karten-Library liefert die Policy-Karten dieses Workspace als Unter-Menü (Toggle je Karte,
-   gemessen am vorhandenen CardRow-Schalter in Policies.tsx Zeilen 100–109).
+   gemessen am vorhandenen CardRow-Schalter in Policies.tsx Zeilen 109–117).
 3. **Beitrag anmelden:** Quellen melden sich beim Kern mit `register({kind, entries})`; der
    Kern mischt sie pro Descriptor. Das ist die schmale Schnittstelle aus SPEC A8 („Erweiterbarkeit
    durch gute Architektur, nicht durch ein System“): eine neue Quelle ist ein Modul im Repo, das
@@ -160,12 +160,12 @@ Oberfläche nicht, weil er `pointer-events:none` trägt und nur die Karte
 ## 5. Was projectOS beisteuert
 
 - **„Set Policies“ auf Workspace-Zeilen:** der Eintrag öffnet das vorhandene Policy-Fenster
-  (PolicyWindow in Policies.tsx Zeilen 221–283) an der Klickstelle; der Store
+  (PolicyWindow in Policies.tsx Zeilen 231–309) an der Klickstelle; der Store
   (policy-store.ts Zeilen 24–49) hält genau eine Fensteranfrage, Ziehen am Kopf verschiebt,
   ✕ schließt — alles vorhanden, nichts neu geschrieben.
 - **Karten im Unter-Menü:** die Policy-Karten des getroffenen Workspace als MenuItem-Zeilen
   mit Toggle (enabled), sortiert nach `order` (sortCards in policy-model.ts Zeilen 25–27).
-- **Der Tab „Policies“** bleibt der Editor der Library (PolicyTab, Policies.tsx Zeilen 177–215);
+- **Der Tab „Policies“** bleibt der Editor der Library (PolicyTab, Policies.tsx Zeilen 187–225);
   das Menü ist eine Darstellungsform derselben Felder, keine zweite Implementierung.
 
 ## 6. Dieselben Felder in anderen Frames und im Node-Graphen
@@ -198,7 +198,7 @@ keine neue Quelle. Der Node-Graph ist ein eigenes Vorhaben mit eigener Spec (SPE
    | Zeile | Quelle (gemessen) | Wirkung |
    |---|---|---|
    | „Project OS öffnen“ | unsere eigene Seitenleisten-Zeile `sidebar.panellist`, id `project-os.manager` (entry.tsx Zeilen 97–102) | öffnet die Manager-Seite im Slot `main` |
-   | „Policies für diesen Workspace“ | `useWorkspaces` liefert `items` (dsh-client-ui-workspace/lib/types/client/index.d.ts Zeile 11); der Workspace wird mit derselben Regel gewählt, die der Tab schon benutzt: `items[0]?.workspaceId` (Policies.tsx Zeile 184) | öffnet das Policy-Fenster an der Klickstelle |
+   | „Policies für diesen Workspace“ | `useWorkspaces` liefert `items` (dsh-client-ui-workspace/lib/types/client/index.d.ts Zeile 11); der Workspace wird mit derselben Regel gewählt, die der Tab schon benutzt: `items[0]?.workspaceId` (Policies.tsx Zeile 194) | öffnet das Policy-Fenster an der Klickstelle |
 
    Zwei Regeln, die daraus folgen und die vor dem Bau zu bestätigen sind:
 
