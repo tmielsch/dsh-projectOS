@@ -23,6 +23,17 @@ Zwei Arten von Eingriff: **A** = Datei im DSH-Paket wird direkt umgeschrieben (`
 | 13 | `system-prompt-ohne-modell` | B | Modellname aus dem Persona-Satz, Cache-Präfix bleibt gleich | dsh-web-app | nein | nein |
 | 14 | `team-rente` (**Fremd-Patch** von ExpertKT) | A | Phase `retired`/`resting`, `retire_teammate`, `/team retire\|rest\|work\|model\|add` | dsh-experimental-agent-team, `-tool-agent-team` | nein | nein |
 | 15 | `teammate-remove` | — | **stillgelegt** (hat nie funktioniert, ersetzt durch Nr. 14) | — | — | — |
+| 16 | `stille-nachrichten` | B | `send_message` bekommt `quiet: true`: Direkt-Nachricht an ein Mitglied, ohne Lead-Kaskade | dsh-experimental-tool-agent-team, `-agent-team`, dsh-system-prompt | nein | nein |
+
+**Nr. 16 (Anordnung des Menschen 2026-10-30, Stand 2026-10-30):** Ursache gemessen — `dsh-experimental-tool-agent-team`
+schreibt in jedes Mitglied einen Reminder (Zeile 87–88: „To message your Team Lead, use send_message({target:'lead'})“)
+und die Lead-Policy (Zeile 28) verlangt, dass der Lead auf jedes Mitglied wartet; `send_message` hat nur die Felder
+`target` und `message`, sein Ergebnis-Schema ist `additionalProperties:false` (Zeile 322ff), kann also keinen Hinweis an
+den Absender tragen. Der Patch gibt dem Werkzeug das optionale Feld `quiet`, setzt einen Vermerk in die Nachricht
+(„nur für dich, antworte in diesem Thread, dem Lead nichts melden“), gibt dem Absender den Hinweis aus der ersetzten
+`execute`, und schreibt die Kaskaden-Regel in den System-Prompt jedes Mitglieds (`order 610`) und des Leads.
+Selbstprüfung: `node ~/.dsh/patches/stille-nachrichten.mjs` → „alles in Ordnung“. Zurück: Eintrag aus
+`cordis.patch.yml` entfernen und DSH neu starten.
 
 **Zum Limit der Teammitglieder (MESSUNG):** Kein Patch ändert es. Die Grenze `maxMembers` (Standardwert im Kern 16, im Bundle 8) steht
 als Einstellung im Profil auf **32** (`cordis.patch.yml` Zeile 1156). Der Fremd-Patch Nr. 14 ändert nur die **Zählung**: entlassene

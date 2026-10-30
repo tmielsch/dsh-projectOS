@@ -54,6 +54,10 @@
       "to": "patches/delegate-send.mjs"
     },
     {
+      "from": "patches/stille-nachrichten.mjs",
+      "to": "patches/stille-nachrichten.mjs"
+    },
+    {
       "from": "patches/teammate-model.mjs",
       "to": "patches/teammate-model.mjs"
     },
