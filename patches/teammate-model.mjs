@@ -118,7 +118,7 @@ export function parseSelection(args, routen) {
 	const slugVon = (anbieter, modell) => `${anbieter}/${modell}`;
 	const anbieterAus = (slug) => slug.slice(0, slug.indexOf("/"));
 	const modellAus = (slug) => slug.slice(slug.indexOf("/") + 1);
-	const freigegeben = (anbieter, slugModell) => liste.some((r) => r?.provider === anbieter && slugVon(r.provider, r.model) === slugModell);
+	const freigegeben = (anbieter, slugModell) => liste.some((r) => passt(r?.provider, anbieter) && (passt(r?.model, slugModell) || passt(slugVon(r?.provider, r?.model), slugModell)));
 
 	if (provider === undefined || model === undefined) {
 		// Der Kern verlangt im Feld `model` die Form "<provider>/<modell>". Fehlt
@@ -143,10 +143,10 @@ export function parseSelection(args, routen) {
 				return { provider: anbieterSlug, model: slug, ...effort === undefined ? {} : { reasoningEffort: effort } };
 			}
 		} else if (provider === undefined && slug.length > 0) {
-			const treffer = liste.filter((r) => r?.model === slug);
+			const treffer = liste.filter((r) => !/[*?]/.test(r?.model ?? "") && passt(r?.model, slug));
 			if (treffer.length === 1) return { provider: treffer[0].provider, model: slugVon(treffer[0].provider, slug), ...effort === undefined ? {} : { reasoningEffort: effort } };
 		} else if (typeof provider === "string" && !provider.includes("/") && slug.length === 0) {
-			const kandidat = liste.filter((r) => r?.provider === provider);
+			const kandidat = liste.filter((r) => passt(r?.provider, provider) && !/[*?]/.test(r?.model ?? ""));
 			if (kandidat.length === 1) return { provider, model: slugVon(provider, kandidat[0].model), ...effort === undefined ? {} : { reasoningEffort: effort } };
 		}
 		throw new Error("`provider` (Anbieter) und `model` (Modell) gehoeren zusammen: nenne beide oder keines von beiden. Der Kern verlangt im Feld `model` die Form \"<provider>/<modell>\", zum Beispiel \"homepc/swift-1.5-iq3_xxs\".");
@@ -170,7 +170,7 @@ export function parseSelection(args, routen) {
 	}
 	// Nacktes Modell mit genanntem Anbieter: der Kern lehnt das ab. Aus der
 	// Liste wird der Slug gebaut, wenn genau diese Route freigegeben ist.
-	if (liste.some((r) => r?.provider === provider && r?.model === model)) {
+	if (liste.length === 0 || liste.some((r) => passt(r?.provider, provider) && passt(r?.model, model))) {
 		return { provider, model: slugVon(provider, model), ...effort === undefined ? {} : { reasoningEffort: effort } };
 	}
 	return { provider, model, ...effort === undefined ? {} : { reasoningEffort: effort } };
@@ -188,6 +188,20 @@ function listefuerAnbieter(routen, anbieter) {
 	return anbieter === undefined ? routen : routen.filter((route) => route?.provider === anbieter);
 }
 
+/** Platzhalter-Vergleich: `*` und `?` in Mustern, sonst exakt. */
+export function passt(muster, wert) {
+	if (typeof muster !== "string" || typeof wert !== "string") return false;
+	if (!/[*?]/.test(muster)) return muster === wert;
+	let quelle = "^";
+	for (const zeichen of muster) {
+		if (zeichen === "*") quelle += ".*";
+		else if (zeichen === "?") quelle += ".";
+		else quelle += zeichen.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	}
+	quelle += "$";
+	return new RegExp(quelle).test(wert);
+}
+
 /**
  * Steht diese Route in der gemeinsamen Liste?
  *
@@ -198,7 +212,7 @@ function listefuerAnbieter(routen, anbieter) {
  */
 export function isAllowed(routen, provider, model) {
 	if (!Array.isArray(routen)) return false;
-	return routen.some((route) => route?.provider === provider && route?.model === model);
+	return routen.some((route) => passt(route?.provider, provider) && passt(route?.model, model));
 }
 
 /**
@@ -410,13 +424,13 @@ export function apply(ctx) {
 			// (der Normalfall: UI schreibt Slugs) wird der Vergleich hier
 			// slug-faehig ausgefuehrt und das nackte Modell weitergereicht —
 			// dieselbe Semantik, die der Kern in seiner eigenen Liste erwartet.
-			const istSlugListe = routen.some((r) => typeof r?.model === "string" && r.model.includes("/"));
+			const istSlugListe = Array.isArray(routen) && routen.some((r) => typeof r?.model === "string" && r.model.includes("/"));
 			const vergleich = auswahl.model.includes("/") && auswahl.model.startsWith(auswahl.provider + "/")
 				? { provider: auswahl.provider, model: auswahl.model.slice(auswahl.provider.length + 1) }
 				: auswahl;
-			const erlaubt = istSlugListe
-				? routen.some((r) => r?.provider === vergleich.provider && (r?.model === vergleich.model || r?.model === `${vergleich.provider}/${vergleich.model}`))
-				: isAllowed(routen, vergleich.provider, vergleich.model);
+			const erlaubt = routen === undefined || (istSlugListe
+				? routen.some((r) => passt(r?.provider, vergleich.provider) && (passt(r?.model, vergleich.model) || passt(r?.model, `${vergleich.provider}/${vergleich.model}`)))
+				: isAllowed(routen, vergleich.provider, vergleich.model));
 			if (!erlaubt) {
 				throw new Error(`die Modell-Route "${auswahl.provider}/${auswahl.model}" ist fuer Teammitglieder nicht freigegeben. Erlaubt ist: ${routeText(routen)}.`);
 			}
