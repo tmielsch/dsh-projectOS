@@ -388,6 +388,17 @@ Festgehalten (Wünsche, **noch kein Entwurf**, Fragen in D27 bis D31):
 8. **Team-Designer:** der Mensch kann **eine Teamstruktur selbst anlegen**, ohne dass Agenten das tun: ein **Plus-Zeichen neben Blattknoten** fügt Kinder hinzu; sobald Änderungen **bestätigt (committed)** werden und neue Sitzungen/Kacheln angelegt sind, entstehen sie. „Eine Art Agent-Team-Designer, **Houdini**“, **von Hand und von Agenten** bedienbar, „ein richtiges Profi-Werkzeug, nicht einfach nur irgendein Chat-Interface“.
 9. **Apps/Widgets auf der Fläche (Beispiele, keine Entscheidung):** Textverarbeitung direkt dort; **Artefakte ganz klein** neben den Teams, sodass man an ein Team heranzoomt und sieht, **welche Artefakte** es nutzt und **an wem sie hängen**; daraus ein **gemeinsamer Editor** („wie ChatGPT Canvas“).
 
+### A18 — Erscheinungsbild und Statusfarben, 2026-10-30
+
+Antwort auf die Frage nach der Gestaltung der Kachel (zwei Farbkanäle: LED für den Inferenzstatus, Umrandung für den Prozessstatus):
+
+> „Mach einfach irgendwie so Discord Dunkel, Dark Mode, irgendwie ja, weiß ich nicht. Irgendwas Schickes halt. Und dann einfach einfache Farben. RGB, Grau, Lila, mit Feel Value, Separation halt alles. Für die Statusfarben. Wobei Prozess, der Prozessstatus, das sollte man als User definieren können, welche Farbe für welches Label und welche Prozess nutzen kann."
+
+Festgehalten:
+1. **Gesamteindruck:** dunkel im Stil von Discord, „irgendwas Schickes“; die Gestaltung liegt beim Agenten (Wunsch, kein Maß).
+2. **Statusfarben sind einfache Farben:** Rot, Grün, Blau, Grau, Lila (Lesart des Agenten für „RGB, Grau, Lila“). Die Wörter „mit Feel Value, Separation halt alles“ sind im Diktat **nicht eindeutig**; der Agent deutet sie **nicht**, sondern fragt (D32).
+3. **Die Farbe des Prozessstatus kann der Nutzer selbst festlegen:** welche Farbe zu welchem **Label** (Zustand) gehört. Die Wahl gilt für **die Umrandung der Kachel**; ob sie auch für die LED des Inferenzstatus gilt, ist offen (D32). Die Einstellung wird **gespeichert** (erster Schnitt: `localStorage` wie die Abteilungsnamen, A15/D21; später in einer Datei unter `~/.dsh/team-profile/`).
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -660,3 +671,4 @@ Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erk
 29. **Reihenfolge und Zuschnitt (A17 gesamt):** A16 und A17 zusammen sind **mehr als ein Baustein**. Vorschlag zur Diskussion: erst die Leinwand mit den Kacheln und dem Inferenzstatus (A16 Schnitt i), dann Quick-Chat und Center-Peek, dann Dateien (Schnitt ii/iii), danach Team-Designer, zuletzt das Widget-System. Das Widget-System ist ein eigenes Vorhaben mit eigener Spec.
 30. **Name:** „MadOS“ als künftiger Name; **heute heißt das Plugin und die Seite „Project OS“** (A15). Offen, ob umbenannt wird, und wann.
 31. **Team-Designer (A17 Punkt 8):** Eine Sitzung, die der Mensch auf der Leinwand anlegt, braucht einen Weg, Teammitglieder zu erzeugen (B6: `session.create`, `spawn_teammate` ist ein Agentenwerkzeug). Das Anlegen einer Struktur ohne Agent ist **ungemessen**.
+32. **Farben (A18):** (a) Was bedeuten „Feel Value, Separation“ im Diktat: vermutlich eine Eigenschaft der Farben (zum Beispiel Füllung/Sättigung/Abstufung); Rückfrage an den Menschen. (b) Gilt die vom Nutzer gewählte Farbe je Label nur für die **Umrandung** (Prozessstatus) oder auch für die **LED** (Inferenzstatus)? Vorschlag: nur Umrandung und Kopf; die LED behält feste Farben, damit der Inferenzstatus überall gleich lesbar bleibt. (c) Welche Labels sind einstellbar: Vorschlag die Spalten des Bretts (Arbeitet, Wartet, Startet, Ruhend, Gescheitert, Fertig).
