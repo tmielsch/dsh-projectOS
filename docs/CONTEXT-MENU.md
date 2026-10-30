@@ -96,20 +96,66 @@ Ablauf je Rechtsklick:
    durch gute Architektur, nicht durch ein System“): eine neue Quelle ist ein Modul im Repo, das
    seinen `kind` und seine Reihen anmeldet, ohne den Kern umzubauen.
 
-## 4. Das Menü als eigene Overlay-Schicht über der Rain
+## 4. Das Menü als eigene Overlay-Schicht über der Rain — gemessen, Weg 1 trägt
 
-- **Zeichnung:** `Menu` mit `portal: true` und `getAnchorRect: () => rect` aus dem Klickpunkt
-  (gemessener Vertrag Menu.d.ts Zeilen 89–104). Die Liste landet in document.body, also
-  außerhalb der Overlay-Schicht bei z-index 20.
-- **Höhe:** die Menü-Ebene wird wie das Policy-Fenster als Körper-Container mit
-  `z-index: 2147483647` angelegt (styles.ts Zeile 119, gemessen über canvas 2147482000,
-  toast 2147482400, modal 2147483000). Ein `MenuSurface` (Menu.d.ts Zeilen 1–15 der
-  MenuSurface.d.ts) trägt das Menü-Material und die macOS-Unterlegung.
+**Zuerst die Korrektur einer falschen Annahme des ersten Entwurfs.** Der erste Entwurf sagte,
+`portal: true` lege die Liste in document.body und damit außerhalb des Stapelkontexts der
+Overlay-Schicht, und ein z-index von 2147483647 auf unserer Menü-Ebene reiche. Das ist falsch.
+Gemessen in `@deepseek-ai/dsh-client-ui-primitives/lib/Menu.module.css`:
+
+- `.root{position:relative;display:inline-flex}`
+- `.list{position:absolute;top:calc(100% + 4px);left:0;z-index:100}`
+- `.portal{position:fixed;top:auto;left:auto;z-index:1100}` — der Kommentar darüber sagt, die
+  portierte Karte müsse über Modals (z 1000) liegen.
+
+Die portierte Karte bringt ihren **eigenen** z-index 1100 mit; 1100 liegt weit unter der
+Matrix-Kanvas mit 2147482000. Ein höherer Wert auf einem Layer, den wir zusätzlich anlegen,
+erreicht diese Karte nicht: `listClassName` legt nur eine Klasse auf dieselbe Karte, mit
+gleicher Spezifität wie `.portal`, also entscheidet die Reihenfolge im Stylesheet — Zufall,
+kein Vertrag.
+
+**Messung (Pixel, nicht elementFromPoint).** `elementFromPoint` taugt hier nicht: die
+Matrix-Kanvas hat `pointer-events:none`, also überspringt die Trefferprüfung sie und würde
+„Menü sichtbar“ melden, obwohl die Regenwand darüber malt. Gemessen wurde deshalb die
+tatsächlich gezeichnete Pixelfarbe an der Menükarte, in Chromium, mit den wörtlichen
+gelieferten CSS-Regeln und dem gemessenen Rahmen (frame position:relative overflow:hidden,
+centerCol ohne Stapelkontext, Regenwand z-index 2147482000, Shell-Overlay z-index:20
+position:absolute). Regenwand `rgb(220, 30, 30)`, Menükarte `rgb(20, 200, 90)`:
+
+| Weg | Karte liegt in | z-index der Karte | Pixel auf der Karte | Ergebnis |
+|---|---|---|---|---|
+| `portal: true` (erster Entwurf) | document.body | 1100 | `rgb(220, 30, 30)` | Regenwand malt darüber, Menü unsichtbar |
+| `portal: false` in unserem Körper-Layer | `.pos-window-layer` (2147483647) | 100 | `rgb(20, 200, 90)` | Menü sichtbar |
+
+Zusätzlich gemessen für Weg 1: ein echter Klick auf die Karte kommt an (Trefferzähler 1),
+und ein Klick daneben trifft den Layer **nicht** (Zähler 0) — der Layer blockiert die
+Oberfläche nicht, weil er `pointer-events:none` trägt und nur die Karte
+`pointer-events:auto` hat.
+
+**Der Plan nimmt deshalb Weg 1:**
+
+- **Zeichnung:** `Menu` mit `portal: false` **innerhalb** unseres Körper-Layers
+  `.pos-window-layer` (styles.ts Zeilen 112–120: `position:fixed; inset:0;
+  z-index:2147483647; pointer-events:none`). Der Anker-Span `.root` wird auf den Klickpunkt
+  gesetzt (er ist `position:relative`); die Liste hängt mit `.list` genau darunter
+  (`top:calc(100% + 4px); left:0`) und erbt die Stapelhöhe unseres Layers, statt sie dem
+  Stylesheet-Zufall zu überlassen. Die Karte bekommt `pointer-events:auto`.
+- **Stapelhöhe:** 2147483647 auf unserem Layer, gemessen über canvas 2147482000,
+  toast 2147482400 und modal 2147483000.
+- **Verworfener Weg:** `portal: true` mit `getAnchorRect` ist vertraglich vorhanden
+  (Menu.d.ts Zeilen 89–104) und wäre bequemer, trägt aber die Sichtbarkeit nicht. Er wird
+  nicht benutzt, solange die Regenwand läuft.
+- **Verworfener Weg 2 des Leads:** die Zeilen selbst mit `MenuSurface`/`MenuItemButton` in
+  den Körper-Layer zeichnen wäre ein Nachbau der Tastaturführung von `Menu` (Tab wandert die
+  Zeilen, Escape schließt, Fokus zurück — Menu.d.ts Zeilen 70–76) und verstößt gegen das
+  Verbot, vorhandene Arbeit neu zu machen. Weg 1 braucht ihn nicht.
 - **Regeln:** `event.preventDefault()` auf contextmenu; `onClose` bei Outside-Click, Escape
-  (gemessen Zeilen 84–86); `closeOnPointerLeave` für Unter-Menüs.
-- **Kein zweites React:** Portal durch react-dom aus dem Modulsystem der Seite
-  (gemessen: in index-5SrrfWpU.js Zeile 126 als „react-dom“ und „react-dom/client“ registriert;
-  `eval('require')` erreicht diese require im Bundel, Messergebnis runtime result 'function').
+  (Menu.d.ts Zeilen 84–86); `closeOnPointerLeave` für Unter-Menüs; `pointer-events:none` am
+  Layer, `auto` an der Karte (gemessen).
+- **Kein zweites React nötig, aber vorhanden falls gebraucht:** unser Körper-Layer wird heute
+  per `createPortal` aus dem Modulsystem der Seite gehalten (react-dom in
+  index-5SrrfWpU.js Zeile 126 registriert; `eval('require')` erreicht die require im Bundel,
+  Messergebnis runtime result 'function'). Für Weg 1 genügt derselbe Layer.
 
 ## 5. Was projectOS beisteuert
 
@@ -139,7 +185,33 @@ keine neue Quelle. Der Node-Graph ist ein eigenes Vorhaben mit eigener Spec (SPE
    beantragt.
 2. **Reihenfolge der Beiträge:** mehrere Quellen melden denselben `kind`; eine `order`-Zahl
    wie bei Slots (gemessen order 30/40 in entry.tsx Zeilen 100 und 118) entscheidet.
-3. **Tastatur:** `Menu` bringt Tab/Escape/Fokusrückgabe bereits (gemessen Zeilen 70–76).
+3. **Tastatur:** `Menu` bringt Tab/Escape/Fokusrückgabe bereits (Menu.d.ts Zeilen 70–76).
+
+4. **Klick auf eine Stelle OHNE `data-row-key` (`kind: 'none'`) — was dann im Menü steht.**
+   SPEC A19 verlangt, dass das Menü „quasi global in DSH“ funktioniert; die Spec gewinnt, also
+   muss dieser Fall Einträge haben und darf nicht leer sein. Gemessen ist die Lage: ohne
+   Treffer gibt es keine Id und keinen Titel, also **keine** workspace- oder
+   sitzungsgebundenen Zeilen. Es bleiben nur Zeilen, deren Quelle projectOS selbst ist — alles
+   andere wäre die Verdrahtung von etwas, das wir nicht angelegt haben (Grenze des Auftrags).
+   Damit stehen dort genau diese zwei Zeilen:
+
+   | Zeile | Quelle (gemessen) | Wirkung |
+   |---|---|---|
+   | „Project OS öffnen“ | unsere eigene Seitenleisten-Zeile `sidebar.panellist`, id `project-os.manager` (entry.tsx Zeilen 97–102) | öffnet die Manager-Seite im Slot `main` |
+   | „Policies für diesen Workspace“ | `useWorkspaces` liefert `items` (dsh-client-ui-workspace/lib/types/client/index.d.ts Zeile 11); der Workspace wird mit derselben Regel gewählt, die der Tab schon benutzt: `items[0]?.workspaceId` (Policies.tsx Zeile 184) | öffnet das Policy-Fenster an der Klickstelle |
+
+   Zwei Regeln, die daraus folgen und die vor dem Bau zu bestätigen sind:
+
+   - **`preventDefault()` nur, wenn das Menü wirklich Einträge hat.** Sonst bliebe das
+     Browser-Menü (Kopieren/Einfügen) an Stellen weg, an denen wir nichts anzubieten haben.
+   - **In Eingabefeldern und Textflächen nie abfangen** (`input`, `textarea`,
+     `[contenteditable]`): dort gehört das Kontext-Menü des Browsers hin, und ein eigenes
+     Menü würde das Kopieren und Einfügen verdrängen. Das ist eine Grenze, die der Plan
+     ausdrücklich zieht; ob der Mensch das anders will, ist seine Entscheidung.
+   - **Offen:** ob „Policies für diesen Workspace“ ohne Treffer den ersten Workspace nehmen
+     soll (die gemessene Regel des Tabs) oder den Workspace, in dem die aktuelle Sitzung läuft.
+     Die zweite Fassung braucht `cwd` aus der Sitzung (`byId[id].cwd`, SPEC B7) und ist
+     genauer; sie ist hier als Erweiterung notiert, nicht als erster Schnitt.
 
 ## 8. Abnahme des Plans
 
