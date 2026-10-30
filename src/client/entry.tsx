@@ -107,7 +107,18 @@ export async function apply(ctx: any): Promise<void> {
         locale: NS,
         inject: () => ({
           openSession: (sessionId: string) => sub.uiWorkspace.openSession(sessionId),
-          renderPolicies: (useWorkspaces: any) => PolicyTab({ useWorkspaces, model, t }),
+          // A React ELEMENT, never a plain call. Measured hook counts: ManagerPage has 20 hooks
+          // (11 useState, 1 useRef, 5 useMemo, 3 useEffect), PolicyTab 1 (useEffect), PolicyList 3
+          // (useState x3). Called as functions inside ManagerPage's render, all 24 counted in ONE hook
+          // list; the click on "Policies" grew that list past the previous render, and React error #310
+          // is exactly that check. As an element, PolicyTab counts its hooks in its own component.
+          // The first workspace's cards are loaded here so the tab shows content on the first render.
+          renderPolicies: (useWorkspaces: any) => {
+            const items = useWorkspaces((state: { items: { workspaceId: string }[] }) => state.items)
+            const first = items[0]?.workspaceId
+            if (first !== undefined) model.load(first)
+            return <PolicyTab useWorkspaces={useWorkspaces} model={model} t={t} />
+          },
         }),
       }, ManagerPage))
 

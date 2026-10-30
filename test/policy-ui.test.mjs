@@ -1,5 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   clampPosition, createPolicyStore, enabledCards, filterCards, matchWorkspace, previewText,
   sortCards, toggleCard, workspaceIdOfRowKey,
@@ -101,4 +102,61 @@ test('the sidebar row key names the workspace it belongs to', () => {
   assert.equal(workspaceIdOfRowKey('workspace:3f2a'), '3f2a')
   assert.equal(workspaceIdOfRowKey('session:a3678ba1d828'), '')
   assert.equal(workspaceIdOfRowKey(''), '')
+})
+
+// ---------------------------------------------------------------------------
+// The built bundle must render the policy components as React ELEMENTS, never call them as plain
+// functions. Measured cause of React error #310 (the panel went empty on the click on "Policies"):
+// ManagerPage has 20 hooks (11 useState, 1 useRef, 5 useMemo, 3 useEffect), PolicyTab 1 (useEffect),
+// PolicyList 3 (useState x3). Called as functions inside ManagerPage's render, all 24 hooks counted
+// in ONE hook list, so the click grew that list past the previous render — #310 is exactly that check.
+// In the built bundle a plain call reads `Name({`; a component element reads `jsx)(Name,`.
+// ---------------------------------------------------------------------------
+
+function bundleText() {
+  const url = new URL('../lib/client.js', import.meta.url)
+  let text
+  try {
+    text = readFileSync(url, 'utf8')
+  } catch {
+    assert.fail('lib/client.js is not on disk — run `npm run build` before the tests')
+  }
+  return text
+}
+
+/** Every place where `Name({` appears, with the 9 characters standing in front of it. */
+function callSites(text, name) {
+  const hits = []
+  let i = 0
+  while ((i = text.indexOf(`${name}({`, i)) >= 0) {
+    hits.push({ at: i, before: text.slice(Math.max(0, i - 9), i) })
+    i += name.length
+  }
+  return hits
+}
+
+test('the built bundle defines PolicyTab and PolicyList as component functions', () => {
+  const text = bundleText()
+  for (const name of ['PolicyTab', 'PolicyList']) {
+    assert.ok(text.includes(`function ${name}({`), `${name} is not a function declaration in lib/client.js`)
+  }
+})
+
+test('the built bundle contains no plain call of PolicyTab or PolicyList', () => {
+  const text = bundleText()
+  for (const name of ['PolicyTab', 'PolicyList']) {
+    const plain = callSites(text, name).filter((hit) => hit.before !== 'function ')
+    assert.deepEqual(
+      plain.map((hit) => hit.at),
+      [],
+      `plain call ${name}({ in lib/client.js at offset ${plain.map((hit) => hit.at).join(', ')} — render it as <${name} ... /> so its hooks count in its own component`,
+    )
+  }
+})
+
+test('the built bundle renders PolicyTab and PolicyList as React elements', () => {
+  const text = bundleText()
+  for (const name of ['PolicyTab', 'PolicyList']) {
+    assert.ok(text.includes(`.jsx)(${name},`), `${name} is never rendered as a JSX element in lib/client.js`)
+  }
 })
