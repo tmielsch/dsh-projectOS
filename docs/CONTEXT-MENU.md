@@ -184,7 +184,7 @@ keine neue Quelle. Der Node-Graph ist ein eigenes Vorhaben mit eigener Spec (SPE
    heute nutzt. Empfehlung: der Listener bleibt die erste Fassung, der Slot wird beim Kern
    beantragt.
 2. **Reihenfolge der Beiträge:** mehrere Quellen melden denselben `kind`; eine `order`-Zahl
-   wie bei Slots (gemessen order 30/40 in entry.tsx Zeilen 100 und 118) entscheidet.
+   wie bei Slots (gemessen order 30/40 in entry.tsx Zeilen 100 und 129) entscheidet.
 3. **Tastatur:** `Menu` bringt Tab/Escape/Fokusrückgabe bereits (Menu.d.ts Zeilen 70–76).
 
 4. **Klick auf eine Stelle OHNE `data-row-key` (`kind: 'none'`) — was dann im Menü steht.**
