@@ -9,6 +9,16 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { clampPosition } from './policy-store'
+
+/**
+ * react-dom comes from the page's own module system: measured in the shell bundle
+ * (index-5SrrfWpU.js line 126) that "react-dom" and "react-dom/client" are registered there, so a
+ * portal rendered through it uses the SAME React instance as the page. `eval('require')` reaches
+ * that require from inside the built bundle (measured: runtime result 'function'). A plain import
+ * of react-dom would not be externalized by scripts/build-client.mjs (not in my allowed files),
+ * so this is the measured way in.
+ */
+const rdom: { createPortal?: (children: any, container: any) => any } = eval('require')('react-dom')
 import { sortCards, toggleCard, type PolicyCard, type WorkspaceItem } from './policy-model'
 import type { Key } from './locales'
 
@@ -230,11 +240,29 @@ export function PolicyWindow({ store, model, t, useWorkspaces }: {
   useEffect(() => store.subscribe(() => setRequest(store.current())), [store])
 
   const drag = useRef<{ dx: number; dy: number } | null>(null)
+  // The layer the window is painted into. Measured cause of the window hiding behind the rain:
+  // the shell overlay layer (.pI_x6G_overlayLayer, dsh-client-ui-layout/lib/client.js line 73) is
+  // `z-index:20; position:absolute` — a stacking context of its own. Measured in Chromium with the
+  // exact rules: a window inside that layer loses to the matrix canvas at z-index 2147482000 even
+  // when its own z-index is raised to 2147483647 (elementFromPoint answers CANVAS), while a
+  // body-level container above the rain wins. So the window is portaled out of the overlay layer
+  // into one container at the document body, above the measured matrix heights (canvas 2147482000,
+  // toast 2147482400, modal 2147483000). dsh-matrix is not touched.
+  const [layer, setLayer] = useState<any>(null)
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const host = document.createElement('div')
+    host.setAttribute('data-pos-window-layer', '')
+    host.className = 'pos-window-layer'
+    document.body.appendChild(host)
+    setLayer(host)
+    return () => { host.remove() }
+  }, [])
   if (request === null) return null
   const workspace = items.find((item) => item.workspaceId === request.workspaceId)
   const title = workspace?.title ?? ''
 
-  return (
+  const windowNode = (
     <div
       className="pos-window"
       data-pos-window=""
@@ -256,11 +284,26 @@ export function PolicyWindow({ store, model, t, useWorkspaces }: {
         onPointerCancel={() => { drag.current = null }}
       >
         <span className="pos-windowtitle">{title === '' ? t('policyWindowNoTitle') : title}</span>
-        <button type="button" className="pos-mini" aria-label={t('close')} onClick={() => store.close()}>✕</button>
+        <button
+          type="button"
+          className="pos-mini"
+          aria-label={t('close')}
+          // Measured cause of the dead ✕: the header's onPointerDown calls setPointerCapture on the
+          // header. In Chromium (scripts/measure-close-click.mjs, variant A = the shipped code) a
+          // pointerdown on the button captures the pointer to the header, so the matching pointerup
+          // is retargeted to the header (`head pointerup target=head`, `head click target=head`) and
+          // the button's own click never fires (`CLOSE CLICK FIRED` false). Without capture (variant
+          // B) and with stopPropagation on the button's own pointerdown (variant C), the click fires
+          // and the window closes. Stopping here keeps dragging from the rest of the header working.
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => store.close()}
+        >✕</button>
       </div>
       <div className="pos-windowbody">
         <PolicyList workspaceId={request.workspaceId} model={model} t={t} />
       </div>
     </div>
   )
+  if (layer === null || rdom.createPortal === undefined) return windowNode
+  return rdom.createPortal(windowNode, layer)
 }

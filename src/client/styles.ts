@@ -109,8 +109,15 @@ export const CSS = `
 .pos-policyfoot{display:flex;align-items:center;gap:8px;min-width:0}
 .pos-add{align-self:flex-start}
 
-/* The floating policy window, opened by a right-click on a workspace row. */
-.pos-window{position:fixed;z-index:60;display:flex;flex-direction:column;border-radius:12px;background:var(--dsw-alias-bg-layer-3,#333);box-shadow:inset 0 0 0 1px var(--dsw-alias-border-l3,#666),0 8px 24px rgba(0,0,0,.4);max-height:min(70vh,520px);pointer-events:auto}
+/* The floating policy window, opened by a right-click on a workspace row.
+   Measured layering: the shell overlay layer (.pI_x6G_overlayLayer in
+   dsh-client-ui-layout/lib/client.js line 73) is 'z-index:20; position:absolute' — its own stacking
+   context. A window inside it loses to the matrix canvas at z-index 2147482000 even when its own
+   z-index is raised to 2147483647 (measured with elementFromPoint in Chromium). The window is
+   therefore portaled into [data-pos-window-layer] at the document body, above the measured matrix
+   heights: canvas 2147482000, toast 2147482400, modal 2147483000 (dsh-matrix is not touched). */
+.pos-window-layer{position:fixed;inset:0;z-index:2147483647;pointer-events:none}
+.pos-window{position:fixed;z-index:1;display:flex;flex-direction:column;border-radius:12px;background:var(--dsw-alias-bg-layer-3,#333);box-shadow:inset 0 0 0 1px var(--dsw-alias-border-l3,#666),0 8px 24px rgba(0,0,0,.4);max-height:min(70vh,520px);pointer-events:auto}
 .pos-windowhead{cursor:grab;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--dsw-alias-bg-layer-2,#2a2a2a);border-radius:12px 12px 0 0;user-select:none}
 .pos-windowhead:active{cursor:grabbing}
 .pos-windowtitle{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,#fff);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
