@@ -35,7 +35,7 @@ function pruefe(name, ok, zusatz = "") {
  * @returns der Kontext plus Aufzeichnungen und die Auslöser für Ereignisse.
  */
 function bauKontext(ziel) {
-	const aufzeichnung = { disarm: [], resume: [], register: [], section: [] };
+	const aufzeichnung = { disarm: [], resume: [], register: [], section: [], provide: [], dienste: {} };
 	const hoerer = new Map();
 	let effectAufraeumen;
 	const kontext = {
@@ -83,7 +83,17 @@ function bauKontext(ziel) {
 		effect(rueckruf) {
 			effectAufraeumen = rueckruf();
 		},
-		set() {}
+		set() {},
+		// gemessen 2026-10-29: cordis verlangt ctx.provide vor ctx.set
+		// (cordis/lib/index.js:785: "cannot set property ... without provide").
+		// Der Attrapp bildet die Anmeldung nach, damit der Trockenlauf den
+		// Diagnose-Dienst wirklich anmelden lässt und nicht in den Warn-Zweig
+		// abbiegt. Ohne diesen Zweig prüft der Trockenlauf die Reparatur nicht.
+		provide(name, value) {
+			aufzeichnung.provide.push(name);
+			aufzeichnung.dienste[name] = value;
+			return () => { delete aufzeichnung.dienste[name]; };
+		}
 	};
 	const ausloesen = (ereignis, nutzlast) => {
 		for (const rueckruf of hoerer.get(ereignis) ?? []) rueckruf(nutzlast);
@@ -174,6 +184,21 @@ const warten = (ms) => new Promise((fertig) => setTimeout(fertig, ms));
 	const antwort = await werkzeug.execute({ waiting_for: "irgendwas" }, { agent: { id: "agent-4" } });
 	pruefe("ohne Ziel nichts entwaffnet", antwort.waiting === false && antwort.wakes_on === "none", antwort.note);
 	pruefe("ohne Ziel kein disarm", aufzeichnung.disarm.length === 0);
+}
+
+// ---------------------------------------------------------------- Diagnose-Dienst
+// Die Reparatur vom 2026-10-29: Der Dienst `goalAwait` muss mit ctx.provide
+// angemeldet werden, weil cordis ein ctx.set ohne vorheriges provide abweist
+// (cordis/lib/index.js:785). Der Start-Abbruch dieses Patches war genau das.
+{
+	const ziel = { id: "goal-dienst", revision: 1, objective: "Dienstziel", phase: "active", activation: "armed", roundsStarted: 0, maxGoalRounds: 5 };
+	const { kontext, aufzeichnung, aufraeumen } = bauKontext(ziel);
+	apply(kontext, {});
+	await warten(50);
+	pruefe("Diagnose-Dienst goalAwait angemeldet", aufzeichnung.provide.includes("goalAwait"), JSON.stringify(aufzeichnung.provide));
+	pruefe("Diagnose-Dienst lesbar", typeof aufzeichnung.dienste.goalAwait?.offene === "function" && typeof aufzeichnung.dienste.goalAwait?.wecke === "function");
+	aufraeumen();
+	pruefe("Diagnose-Dienst beim Abbau weg", aufzeichnung.dienste.goalAwait === undefined);
 }
 
 const fehler = ergebnisse.filter((e) => !e.ok);

@@ -339,6 +339,55 @@ Festgehalten (Wünsche, **noch kein Entwurf**, Fragen in D23–D26):
 6. **Streaming:** Der Mensch will den **Denkprozess beim Entstehen** sehen können (wie den aufgeklappten Denkblock in einer normalen Sitzung); ein Überfliegen genügt. Was es heute gibt (eine Mini-Meldung je Schritt, A15) reicht ihm nicht.
 7. **Brett und Graph zeigen dieselben Kacheln** in zwei Darstellungen; die Knoten des Graphen sind **identisch mit den Kanban-Kacheln** (mit Live-Ticker).
 
+### A17 — Kacheln mit Inferenzstatus, Quick-Chat in der Leinwand, Center-Peek, Widgets, Name „MadOS“, 2026-10-30
+
+(Bild des Menschen: eine Karte „Model state“ mit den Zuständen Idle, Reading, Generating, Queued, Error und einer Zeile „Reading prompt“ mit Fortschrittsbalken.)
+
+> „Ich überlege gerade. Es gibt einmal den aufgabenstatus: arbeitet eine session daran? aber es gbit auch den inferenzstatus (read, write, idle, error, queue) etc. - der sollte in form einer farbigen "LED" auf der Karte angezeigt werden. Die Karten selber haben dann eine farbige umrandung, die ihren Prozess-Status zeigt. (oder vllt sogar farbiger hintergrund)."
+
+> „So sieht man direkt auf einen blick wer in welchem team gerade aktiv ist, und auch was der exakte live/status ist. Evtl statt einer LED, kann man aber auch einfach eine Zeile oder ein feld machen, in dem die letzten Thinking token gestreamed werden, laufende toolcalls, und die Farbe des Hintergrundes ist der Inferenzstatus (der die Strata farben spiegelt)."
+
+> „Das ganz soll angenehmer dark mode sein. Die Strata farben sind auch ganz angenehm. Wichtig ist, das jede Karte einen header hat, der sauber erkennbar ist. Dieser header kann dann auch die statusfarbe als sekundärfarbe halten (z.B. grün = working, red = blocked etc.)."
+
+> „Die Frage ist, wie gestaltet man diese kacheln ideal? Was für Informationen und Shortcuts brauchen sie? der ganze Baum der Abteilung ist dann ja einfach flach auf der Leinwand ausgebreitet, deswegen muss man nicht irgendwie in verschachtelte ordner von sessions die an sessions hängen, sondern man sieht einfach die gesamte struktur auf einen schlag, und kann direkt zu jeder Kachel gehen, ob nun subagent oder team mate. - genau. Was super wichtig ist, eine art pop up "in place" chat zu haben - egal wie. Es muss möglich sein, über dieses Graph-Dashboard, direkt mit jeder Session zu sprechen, ohne den Graphen verlassen zu müssen. Das ist essenziell um Reibung zu vermeiden."
+
+> „Natürlich muss man auch lesen können. Aber das sollte ja gehen, einfach ein md render popup bubble mit Messenger Funktion, die die letzten 3-5 Nachrichten vorhält, aber den rest löscht."
+
+> „Das ist dann quasi der Quick-Comms Kanal. Als nächstes sollte man den in center peek öffnen können. Also weiter das dashboard offen, aber eine ausgewählte Kachel groß und Zentriert, evlt hintergrund blurred oder dunkel."
+
+> „Und dann schlussendlich kann man von da dann zum eigentlichen chat, was einen dann auch aus dem dashboard bringt."
+
+> „In zukunft will ich dieses dashboard zur zentralen interaktionsfläche mit DSH machen, und ein erweiterbares widget system haben."
+
+> „DIe idee ist es, sowas wie dsh in dsh zu haben, wo ein agent mit speziellem skill, neue widgets für diese canvas programmieren kann, die dann als subtools des... genau. MadOS (in Anlehnung an GladOS) - so wird das ding am ende heissen."
+
+> „... die dann als subtools registriert werden, und allen agents danach zur verfügung stehen. z.B. könnte man einfach ein kanban widget entwickeln, inklusiver tools wie card_create(), die dann durch das zentrale MadOS plugin an DSH weitergerreicht werden."
+
+> „Die Idee ist am Ende sowas wie ein ultimatives AgentOS zu haben."
+
+> „Das ganze kann auch einfach mit den normalen workspaces funktionieren. Es gibt dann einen launcher/finder, in dem man MadOS workspaces verwalten kann, welche im Prinzip einfach nur Graphen sind, die als Root den jeweiligen dsh workspace folder haben."
+
+> „Von dieser root ausgehend, kann ich nun sessions an diese root node hängen, also die experten usw, die wiederrum ihre eigenen sessions haben."
+
+> „KP wie, aber es soll auch möglich sein, dass der user eine team struktur anlegt, ohne dass agents das für ihn tun. Sobald änderungen committed werden, und neue sessions/cards initialisiert wurden (einfach so ein plus icon neben leaf nodes, mit denen man neue children da hinzufügen kann, um genestet team strukturen selber entwerfen zu können."
+
+> „So eine art agent team designer/houdini, das sowohl manuell, als auch agentic bedient werden kann. und mit richtigen tools. Halt ein richtiges profi werkzeug, nicht einfach nur irgendein chat interface."
+
+> „Auf dieser oberfläche soll es dann halt auch diese widgets/apps geben. z.B. könnte man textverarbeitung direkt dort machen. Wenn es mit einer art infinite scroll geht, z.B. neben den teams, einfach die ganzen artefakte in ganz mikro klein zu haben, so dass man einfach nahe an ein team ranzoomen kann, und dann sieht man im prinzip alle artefakte mit denen sie arbeiten, und an wem sie hängen."
+
+> „Und dann kann man halt da vllt sowas wie einen collaborative editor draus machen, sowas wie die chatgpt canvas oder so. Aber das ist nur eine idee für apps."
+
+Festgehalten (Wünsche, **noch kein Entwurf**, Fragen in D27 bis D31):
+1. **Zwei getrennte Zustände je Kachel:** der **Aufgabenstatus** (arbeitet die Sitzung an etwas?) und der **Inferenzstatus** (was tut das Modell gerade: Idle, Reading, Generating, Queued, Error). Der Inferenzstatus erscheint als farbige **LED** auf der Kachel; die Kachel trägt eine **farbige Umrandung** (oder einen farbigen Hintergrund) nach dem Prozessstatus. Alternative des Menschen zur LED: eine **Zeile**, in der die **letzten Denk-Token gestreamt** werden und die laufenden Werkzeugaufrufe stehen; die **Hintergrundfarbe ist der Inferenzstatus** und spiegelt die STRATA-Farben.
+2. **Gestaltung:** angenehmer **Dark Mode**; die STRATA-Farben gefallen ihm; **jede Kachel hat einen sauber erkennbaren Kopf**, der die Statusfarbe als Zweitfarbe trägt (grün = arbeitet, rot = blockiert usw.).
+3. **Der ganze Baum einer Abteilung liegt flach auf der Leinwand,** ohne Verschachtelung in Ordner; jede Kachel (Unteragent oder Teammitglied) ist direkt erreichbar.
+4. **Quick-Chat in der Leinwand (essenziell, „um Reibung zu vermeiden“):** Man muss über das Graph-Dashboard **direkt mit jeder Sitzung sprechen** können, **ohne die Leinwand zu verlassen**. Form: ein **Popup / eine Sprechblase mit Messenger-Funktion**, Markdown dargestellt, die **die letzten 3–5 Nachrichten** vorhält und den Rest verwirft („Quick-Comms-Kanal“).
+5. **Drei Stufen der Nähe:** (a) Quick-Chat an der Kachel; (b) **Center-Peek**: die gewählte Kachel groß und zentriert, die Leinwand bleibt offen (Hintergrund unscharf oder dunkel); (c) **der eigentliche Chat** (verlässt das Dashboard).
+6. **Richtung (Zukunft): „MadOS“** (in Anlehnung an GladOS) ist der künftige Name des Ganzen. Das Dashboard soll die **zentrale Bedienfläche für DSH** werden mit einem **erweiterbaren Widget-System**: ein Agent mit besonderer Fähigkeit programmiert neue Widgets für die Leinwand („DSH in DSH“), die als **Unterwerkzeuge** angemeldet werden und **allen Agenten danach zur Verfügung stehen** (Beispiel: ein Kanban-Widget samt Werkzeug `card_create()`, durchgereicht vom zentralen MadOS-Plugin an DSH). Ziel: „ein ultimatives AgentOS“.
+7. **MadOS-Workspaces:** ein **Starter/Finder**, in dem man MadOS-Workspaces verwaltet; ein solcher Workspace ist ein **Graph, dessen Wurzel der DSH-Arbeitsordner ist**. Von der Wurzel aus hängt man Sitzungen (Experten usw.) an, die wiederum eigene Sitzungen haben.
+8. **Team-Designer:** der Mensch kann **eine Teamstruktur selbst anlegen**, ohne dass Agenten das tun: ein **Plus-Zeichen neben Blattknoten** fügt Kinder hinzu; sobald Änderungen **bestätigt (committed)** werden und neue Sitzungen/Kacheln angelegt sind, entstehen sie. „Eine Art Agent-Team-Designer, **Houdini**“, **von Hand und von Agenten** bedienbar, „ein richtiges Profi-Werkzeug, nicht einfach nur irgendein Chat-Interface“.
+9. **Apps/Widgets auf der Fläche (Beispiele, keine Entscheidung):** Textverarbeitung direkt dort; **Artefakte ganz klein** neben den Teams, sodass man an ein Team heranzoomt und sieht, **welche Artefakte** es nutzt und **an wem sie hängen**; daraus ein **gemeinsamer Editor** („wie ChatGPT Canvas“).
+
 ---
 
 ## B. Gemessener Bestand (Stand 2026-10-28, MESSUNG am Mac, DSH-Installation und Profil)
@@ -606,3 +655,8 @@ Begründung der Empfehlung: „Work Group“ und „Department“ sagen ohne Erk
 24. **Wie viel vom Dateisystem?** (A16 Punkt 3) — Zahlen in B13 (66 636 Dateien, aber nur 29 Ordner bis Tiefe 2): Ein ganzer Workspace hat tausende Dateien. Vorschlag: nur Ordner der obersten zwei Ebenen, und Dateien nur dort, wo eine Sitzung sie benutzt; der Rest wird auf Klick geladen. Offen: Entscheidung des Menschen.
 25. **Streaming der Denk-Token (A16 Punkt 6) — gemessen in B12, Entscheidung offen:** Der Verlauf der Sitzung enthält je Schritt die Teile des Stroms (`data.stream`, B11), aber erst nach dem Schritt. Was der Browser **während** des Schritts bekommt, ist zu messen (B12). Das ist die schwerste Frage dieser Runde.
 26. **Bausteine statt Neubau (Anordnung 2026-10-29, `~/.dsh/AGENTS.md`):** Für Graph, Kräfte, Zoom und Verschieben ist zuerst zu suchen, was DSH schon mitbringt, danach eine fertige Bibliothek; **kein eigener Kräfte-Löser**. Messung läuft (B12).
+27. **Inferenzstatus (A17 Punkt 1):** Woher kommt er? Gemessen ist der Strom der Frames `start`/`chunk`/`end` je Modellaufruf (B12). Daraus lassen sich ableiten: **Generating** (Chunks laufen), **Idle** (kein Aufruf läuft), **Error** (Wiederholung/Fehler, Ereignis `llm/retry` vorhanden). **Reading** (das Modell verarbeitet noch den Prompt, bevor das erste Teil kommt) wäre „Aufruf gestartet, noch kein Chunk“, und **Queued** (der Anbieter hat die Anfrage in einer Warteschlange, zum Beispiel ein lokaler Server) ist **nirgends gemessen**. Offen: ob die Anbieter dafür etwas melden (Messung steht aus).
+28. **Quick-Chat (A17 Punkt 4):** Sprechen ohne die Leinwand zu verlassen verlangt, eine Nachricht an eine **fremde** Sitzung zu schicken (B6: `session.prompt` im Browser, `send_message` endet an der Teamgrenze) und ihre letzten Nachrichten zu lesen (B9: der Browser hält keinen Verlauf fremder Sitzungen; das Folgen einer Sitzung mit `assistantStream: true` liefert Fenster und Strom, B12). Ob ein Plugin das aus der Manager-Seite heraus darf, ist **ungeprüft** und der erste Versuch am echten Plugin.
+29. **Reihenfolge und Zuschnitt (A17 gesamt):** A16 und A17 zusammen sind **mehr als ein Baustein**. Vorschlag zur Diskussion: erst die Leinwand mit den Kacheln und dem Inferenzstatus (A16 Schnitt i), dann Quick-Chat und Center-Peek, dann Dateien (Schnitt ii/iii), danach Team-Designer, zuletzt das Widget-System. Das Widget-System ist ein eigenes Vorhaben mit eigener Spec.
+30. **Name:** „MadOS“ als künftiger Name; **heute heißt das Plugin und die Seite „Project OS“** (A15). Offen, ob umbenannt wird, und wann.
+31. **Team-Designer (A17 Punkt 8):** Eine Sitzung, die der Mensch auf der Leinwand anlegt, braucht einen Weg, Teammitglieder zu erzeugen (B6: `session.create`, `spawn_teammate` ist ein Agentenwerkzeug). Das Anlegen einer Struktur ohne Agent ist **ungemessen**.

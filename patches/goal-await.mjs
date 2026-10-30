@@ -397,6 +397,20 @@ export function apply(ctx, config = {}) {
 	ctx.effect(() => {
 		let abgemeldet = false;
 		let abRegister;
+
+		// Diagnose-Dienst: nur zum Nachsehen von außen, steuert nichts.
+		// gemessen 2026-10-29: `ctx.set` verlangt, dass der Name in DIESEM Fiber
+		// vorher mit `ctx.provide` angemeldet war (cordis/lib/index.js:785:
+		// "cannot set property \"goalAwait\" without provide"). Der Eintrag wurde
+		// beim Start abgewiesen und das Werkzeug `await_goal_dependency` gab es
+		// nicht. Der Dienst wird hier angemeldet und beim Abbau wieder abgemeldet.
+		let abDienst;
+		try {
+			abDienst = ctx.provide("goalAwait", { offene, wecke });
+		} catch (error) {
+			protokoll(`warn Diagnose-Dienst goalAwait konnte nicht angemeldet werden: ${String(error?.message ?? error)}`);
+		}
+
 		(async () => {
 			werkzeugBaustein ??= await ladeKern(PAKET_WERKZEUGE);
 			if (abgemeldet) return;
@@ -435,6 +449,7 @@ export function apply(ctx, config = {}) {
 		return () => {
 			abgemeldet = true;
 			if (typeof abRegister === "function") abRegister();
+			if (typeof abDienst === "function") abDienst();
 			abInbox?.();
 			abWeg?.();
 			abAbschnitt?.();
@@ -444,7 +459,4 @@ export function apply(ctx, config = {}) {
 			zustaende.clear();
 		};
 	}, "goal-await lifecycle");
-
-	/** Nur zum Nachsehen von außen (Diagnose); steuert nichts. */
-	ctx.set?.("goalAwait", { offene, wecke });
 }

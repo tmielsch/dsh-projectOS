@@ -1,0 +1,6 @@
+{
+  "name": "@tmielsch/dsh-projectos-patches",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Package boundary for the loose Cordis patch files. Kein dsh.client — sonst zaehlt der Client-Modul-Regler jede Patch-Datei als zweite Quelle des Plugins @tmielsch/dsh-projectos."
+}
