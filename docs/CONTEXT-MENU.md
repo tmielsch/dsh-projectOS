@@ -35,9 +35,10 @@ vor, was ihnen widerspricht.
   disabled, danger, shortcut, submenu}, MenuSeparator, MenuLabel (Zeilen 3–31).
 - **Die Stapelschicht ist gemessen:** die Shell-Overlay-Schicht `.pI_x6G_overlayLayer`
   (dsh-client-ui-layout/lib/client.js Zeile 73) ist `z-index:20; position:absolute` — eigener
-  Stapelkontext. In Chromium gemessen: ein Fenster in dieser Schicht verliert gegen die
-  Matrix-Kanvas bei z-index 2147482000, egal wie hoch sein eigener Wert ist
-  (elementFromPoint antwortet CANVAS); ein Körper-Container gewinnt. Gemessene Matrix-Höhen:
+  Stapelkontext. In Chromium an der gezeichneten Pixelfarbe gemessen (nicht an
+  `elementFromPoint`, das hier nichts beweist — siehe §4): ein Fenster in dieser Schicht verliert
+  gegen die Matrix-Kanvas bei z-index 2147482000, egal wie hoch sein eigener Wert ist; ein
+  Körper-Container gewinnt. Gemessene Matrix-Höhen:
   canvas 2147482000 (~/.dsh/profiles/web/node_modules/@weibaohui/dsh-matrix/client/index.js
   Zeile 230), toast 2147482400 (Zeile 658), modal 2147483000 (client/bundle.js Zeile 130).
   dsh-matrix wird nicht angefasst.
@@ -131,6 +132,15 @@ Zusätzlich gemessen für Weg 1: ein echter Klick auf die Karte kommt an (Treffe
 und ein Klick daneben trifft den Layer **nicht** (Zähler 0) — der Layer blockiert die
 Oberfläche nicht, weil er `pointer-events:none` trägt und nur die Karte
 `pointer-events:auto` hat.
+
+**Gegenprobe zu `elementFromPoint` (gemessen 2026-10-30, nach der Abnahme).** Zwei Läufe in
+Chromium, gleicher Aufbau, gleiche Pixelstelle. Mit `pointer-events:none` an der Kanvas — wie
+bei dsh-matrix — antwortet `elementFromPoint` **nicht** die Kanvas, sondern den Container
+(`frame`); ohne `pointer-events` antwortet sie (`rain`). Die Pixelfarbe ist in beiden Läufen
+dieselbe. Das heißt: `elementFromPoint` kann die Frage „liegt das Menü vor der Regenwand?“
+nicht beantworten, in keine Richtung — es ist kein Beweis für Sichtbarkeit und keiner gegen
+sie. Belastbar ist allein die gezeichnete Pixelfarbe. Die frühere Formulierung in §1, wonach
+`elementFromPoint` die Kanvas zurückgibt, war falsch und ist dort korrigiert.
 
 **Der Plan nimmt deshalb Weg 1:**
 
